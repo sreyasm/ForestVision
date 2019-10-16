@@ -46,11 +46,21 @@ var start2 = new Date({{ s_time2 }});
 var start3 = new Date({{ s_time3 }});
 var start4 = new Date({{ s_time4 }});
 
+var f_start1 = new Date({{ s_ftime1 }});
+var f_start2 = new Date({{ s_ftime2 }});
+var f_start3 = new Date({{ s_ftime3 }});
+var f_start4 = new Date({{ s_ftime4 }});
+
 function end_timer() {
   var end1 = new Date();
   var end2 = new Date();
   var end3 = new Date();
   var end4 = new Date();
+
+  var f_end1 = new Date();
+  var f_end2 = new Date();
+  var f_end3 = new Date();
+  var f_end4 = new Date();
 
   var diff1 = (end1 - start1)/1000;
   var seconds1 = Math.round(diff1);
@@ -63,6 +73,20 @@ function end_timer() {
 
   var diff4 = (end4 - start4)/1000;
   var seconds4 = Math.round(diff4);
+
+
+  var f_diff1 = (f_end1 - f_start1)/1000;
+  var f_seconds1 = Math.round(f_diff1);
+
+  var f_diff2 = (f_end2 - f_start2)/1000;
+  var f_seconds2 = Math.round(f_diff2);
+
+  var f_diff3 = (f_end3 - f_start3)/1000;
+  var f_seconds3 = Math.round(f_diff3);
+
+  var f_diff4 = (f_end4 - f_start4)/1000;
+  var f_seconds4 = Math.round(f_diff4);
+
 
   if (seconds1 < 60) {
     document.getElementById("time1").innerHTML = seconds1 + ' seconds';
@@ -110,6 +134,56 @@ function end_timer() {
   else {
     var hours4 = Math.floor(seconds4 / 3600);
     document.getElementById("time4").innerHTML = hours4 + ' hours';
+  }
+
+
+
+  if (f_seconds1 < 60) {
+    document.getElementById("ftime1").innerHTML = f_seconds1 + ' seconds';
+  }
+  else if (f_seconds1 < 3600) {
+    var f_minutes1 = Math.floor(f_seconds1 / 60);
+    document.getElementById("ftime1").innerHTML = f_minutes1 + ' minutes';
+  }
+  else {
+    var f_hours1 = Math.floor(f_seconds1 / 3600);
+    document.getElementById("ftime1").innerHTML = f_hours1 + ' hours';
+  }
+
+  if (f_seconds2 < 60) {
+    document.getElementById("ftime2").innerHTML = f_seconds2 + ' seconds';
+  }
+  else if (f_seconds2 < 3600) {
+    var f_minutes2 = Math.floor(f_seconds2 / 60);
+    document.getElementById("ftime2").innerHTML = f_minutes2 + ' minutes';
+  }
+  else {
+    var f_hours2 = Math.floor(f_seconds2 / 3600);
+    document.getElementById("ftime2").innerHTML = f_hours2 + ' hours';
+  }
+
+  if (f_seconds3 < 60) {
+    document.getElementById("ftime3").innerHTML = f_seconds3 + ' seconds';
+  }
+  else if (f_seconds3 < 3600) {
+    var f_minutes3 = Math.floor(f_seconds3 / 60);
+    document.getElementById("ftime3").innerHTML = f_minutes3 + ' minutes';
+  }
+  else {
+    var f_hours3 = Math.floor(f_seconds3 / 3600);
+    document.getElementById("ftime3").innerHTML = f_hours3 + ' hours';
+  }
+
+  if (f_seconds4 < 60) {
+    document.getElementById("ftime4").innerHTML = f_seconds4 + ' seconds';
+  }
+  else if (f_seconds4 < 3600) {
+    var f_minutes4 = Math.floor(f_seconds4 / 60);
+    document.getElementById("ftime4").innerHTML = f_minutes4 + ' minutes';
+  }
+  else {
+    var f_hours4 = Math.floor(f_seconds4 / 3600);
+    document.getElementById("ftime4").innerHTML = f_hours4 + ' hours';
   }
 }
 </script>
