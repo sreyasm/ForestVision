@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE eagle SYSTEM "eagle.dtd">
-<eagle version="9.5.1">
+<eagle version="9.3.0">
 <drawing>
 <settings>
 <setting alwaysvectorfont="no"/>
@@ -22349,23 +22349,6 @@ type 0309, grid 2.5 mm</description>
 <label x="154.94" y="99.06" size="1.778" layer="95"/>
 </segment>
 </net>
-<net name="TIM3_CH2" class="0">
-<segment>
-<pinref part="R22" gate="G$1" pin="1"/>
-<wire x1="340.36" y1="116.84" x2="340.36" y2="114.3" width="0.1524" layer="91"/>
-<pinref part="Q1" gate="NMOS" pin="S"/>
-<wire x1="340.36" y1="114.3" x2="347.98" y2="114.3" width="0.1524" layer="91"/>
-<wire x1="340.36" y1="114.3" x2="331.724" y2="114.3" width="0.1524" layer="91"/>
-<junction x="340.36" y="114.3"/>
-<wire x1="331.724" y1="114.046" x2="331.724" y2="114.3" width="0.1524" layer="91"/>
-<label x="330.2" y="114.3" size="1.778" layer="95"/>
-</segment>
-<segment>
-<pinref part="U2" gate="PB" pin="PB5(UART5_RX,TIM3_CH2,I2C1_SMBA,SPI1_MOSI/I2S1_SD,SPI3_MOSI/I2S3_SD,SPI6_MOSI,CAN2_RX,OTG_HS_ULPI_D7,ETH_PPS_OUT,FMC_SDCKE1,DCMI_D10,LCD_G7)"/>
-<wire x1="30.48" y1="175.26" x2="17.78" y2="175.26" width="0.1524" layer="91"/>
-<label x="17.78" y="175.26" size="1.778" layer="95"/>
-</segment>
-</net>
 <net name="+3V3" class="0">
 <segment>
 <pinref part="J2" gate="G$1" pin="5"/>
@@ -22631,12 +22614,22 @@ type 0309, grid 2.5 mm</description>
 <wire x1="266.7" y1="256.54" x2="254" y2="256.54" width="0.1524" layer="91"/>
 <label x="254" y="256.54" size="1.27" layer="95"/>
 </segment>
+<segment>
+<pinref part="U2" gate="PE" pin="PE0(TIM4_ETR,LPTIM1_ETR,UART8_RX,SAI2_MCLK_A,FMC_NBL0,DCMI_D2)"/>
+<wire x1="137.16" y1="129.54" x2="142.24" y2="129.54" width="0.1524" layer="91"/>
+<label x="142.24" y="129.54" size="1.778" layer="95"/>
+</segment>
 </net>
 <net name="CAM_PWDN" class="0">
 <segment>
 <pinref part="CAMERA" gate="G$1" pin="2"/>
 <wire x1="274.32" y1="256.54" x2="287.02" y2="256.54" width="0.1524" layer="91"/>
 <label x="279.4" y="256.54" size="1.27" layer="95"/>
+</segment>
+<segment>
+<pinref part="U2" gate="PE" pin="PE1(LPTIM1_IN2,UART8_TX,FMC_NBL1,DCMI_D3)"/>
+<wire x1="137.16" y1="127" x2="142.24" y2="127" width="0.1524" layer="91"/>
+<label x="142.24" y="127" size="1.778" layer="95"/>
 </segment>
 </net>
 <net name="N$33" class="0">
@@ -22653,6 +22646,23 @@ type 0309, grid 2.5 mm</description>
 <wire x1="274.32" y1="243.84" x2="292.1" y2="243.84" width="0.1524" layer="91"/>
 <pinref part="R4" gate="G$1" pin="1"/>
 <wire x1="292.1" y1="248.92" x2="292.1" y2="243.84" width="0.1524" layer="91"/>
+</segment>
+</net>
+<net name="SERVO_PWM" class="0">
+<segment>
+<pinref part="U2" gate="PF" pin="PF6(TIM10_CH1,SPI5_NSS,SAI1_SD_B,UART7_RX,QUADSPI_BK1_IO3,ADC3_IN4)"/>
+<wire x1="20.32" y1="50.8" x2="12.7" y2="50.8" width="0.1524" layer="91"/>
+<label x="2.54" y="50.8" size="1.778" layer="95"/>
+</segment>
+<segment>
+<pinref part="R22" gate="G$1" pin="1"/>
+<wire x1="340.36" y1="116.84" x2="340.36" y2="114.3" width="0.1524" layer="91"/>
+<pinref part="Q1" gate="NMOS" pin="S"/>
+<wire x1="340.36" y1="114.3" x2="347.98" y2="114.3" width="0.1524" layer="91"/>
+<wire x1="340.36" y1="114.3" x2="331.724" y2="114.3" width="0.1524" layer="91"/>
+<junction x="340.36" y="114.3"/>
+<wire x1="331.724" y1="114.046" x2="331.724" y2="114.3" width="0.1524" layer="91"/>
+<label x="330.2" y="114.3" size="1.778" layer="95"/>
 </segment>
 </net>
 </nets>
@@ -23075,6 +23085,11 @@ type 0309, grid 2.5 mm</description>
 <wire x1="254" y1="154.94" x2="254" y2="152.4" width="0.1524" layer="91"/>
 <label x="254" y="152.4" size="1.778" layer="95"/>
 </segment>
+<segment>
+<pinref part="U3" gate="G$1" pin="PA10"/>
+<wire x1="45.72" y1="127" x2="35.56" y2="127" width="0.1524" layer="91"/>
+<label x="33.02" y="127" size="1.778" layer="95"/>
+</segment>
 </net>
 <net name="LORA_INT" class="0">
 <segment>
@@ -23177,9 +23192,6 @@ type 0309, grid 2.5 mm</description>
 <approved hash="113,1,28.1771,106.454,BATT,,,,,"/>
 <approved hash="113,2,393.023,146.213,J2,,,,,"/>
 <approved hash="113,3,210.701,57.3126,L0_PROGRAM,,,,,"/>
-<approved hash="113,1,33.5212,167.414,SOLAR,,,,,"/>
-<approved hash="113,2,273.643,249.083,J4,,,,,"/>
-<approved hash="113,3,252.153,66.2661,MCU_UART,,,,,"/>
 </errors>
 </schematic>
 </drawing>
