@@ -20587,7 +20587,7 @@ type 0309, grid 2.5 mm</description>
 <part name="C11" library="adafruit" deviceset="C-US" device="C0805K" value="10uF"/>
 <part name="GND13" library="supply1" deviceset="GND" device=""/>
 <part name="GND14" library="supply1" deviceset="GND" device=""/>
-<part name="BATT" library="adafruit" deviceset="JST_2PIN" device="-SMT-RA"/>
+<part name="BATT" library="adafruit" deviceset="JST_2PIN" device="-SMT-RA" value="BATT"/>
 <part name="GND15" library="supply1" deviceset="GND" device=""/>
 <part name="R14" library="adafruit" deviceset="R-US_" device="R0805" value="100K"/>
 <part name="GND17" library="supply1" deviceset="GND" device=""/>
@@ -20599,10 +20599,10 @@ type 0309, grid 2.5 mm</description>
 <part name="FRAME2" library="SparkFun-Aesthetics" library_urn="urn:adsk.eagle:library:507" deviceset="FRAME-LETTER" device="NO_PACKAGE" package3d_urn="urn:adsk.eagle:package:37104/1"/>
 <part name="FRAME3" library="SparkFun-Aesthetics" library_urn="urn:adsk.eagle:library:507" deviceset="FRAME-LEDGER" device="" package3d_urn="urn:adsk.eagle:package:37121/1"/>
 <part name="U2" library="STM32F767ZIT6" deviceset="STM32F767ZIT6" device=""/>
-<part name="J2" library="SparkFun-Connectors" deviceset="CONN_05" device=""/>
+<part name="J2" library="SparkFun-Connectors" deviceset="CONN_05" device="" value="F7_PRGM"/>
 <part name="FRAME4" library="SparkFun-Aesthetics" library_urn="urn:adsk.eagle:library:507" deviceset="FRAME-A4L" device=""/>
 <part name="U3" library="STM32L053C8T6" deviceset="STM32L053C8T6" device=""/>
-<part name="L0_PROGRAM" library="SparkFun-Connectors" deviceset="CONN_05" device=""/>
+<part name="L0_PROGRAM" library="SparkFun-Connectors" deviceset="CONN_05" device="" value="L0_PRGM"/>
 <part name="U$9" library="ForestVisionParts" deviceset="LORAMODULE" device=""/>
 <part name="U$1" library="ForestVisionParts" deviceset="MIKROE_CLICK" device="LARGE"/>
 <part name="GND27" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
@@ -20707,12 +20707,12 @@ type 0309, grid 2.5 mm</description>
 <part name="P+9" library="supply1" deviceset="VCC" device="" value="Vsolar"/>
 <part name="C19" library="ForestVisionParts" deviceset="ADAFRUIT_CPOL-US" device="E5-13" value="4700uF/10V"/>
 <part name="GND43" library="supply1" deviceset="GND" device=""/>
-<part name="MCU_UART" library="pinhead" library_urn="urn:adsk.eagle:library:325" deviceset="PINHD-1X4" device="" package3d_urn="urn:adsk.eagle:package:22407/2"/>
+<part name="MCU_UART" library="pinhead" library_urn="urn:adsk.eagle:library:325" deviceset="PINHD-1X4" device="" package3d_urn="urn:adsk.eagle:package:22407/2" value="MCU_UART"/>
 <part name="C7" library="rcl" library_urn="urn:adsk.eagle:library:334" deviceset="C-US" device="C0603" package3d_urn="urn:adsk.eagle:package:23616/2" value="10uF"/>
 <part name="C20" library="rcl" library_urn="urn:adsk.eagle:library:334" deviceset="C-US" device="C0603" package3d_urn="urn:adsk.eagle:package:23616/2" value="0.1uF"/>
 <part name="R27" library="rcl" library_urn="urn:adsk.eagle:library:334" deviceset="R-US_" device="R0603" package3d_urn="urn:adsk.eagle:package:23555/3" value="10k"/>
-<part name="R28" library="rcl" library_urn="urn:adsk.eagle:library:334" deviceset="R-US_" device="R0603" package3d_urn="urn:adsk.eagle:package:23555/3" value="68.1k"/>
-<part name="R29" library="rcl" library_urn="urn:adsk.eagle:library:334" deviceset="R-US_" device="R0603" package3d_urn="urn:adsk.eagle:package:23555/3" value="213k"/>
+<part name="R28" library="rcl" library_urn="urn:adsk.eagle:library:334" deviceset="R-US_" device="R0603" package3d_urn="urn:adsk.eagle:package:23555/3" value="150k"/>
+<part name="R29" library="rcl" library_urn="urn:adsk.eagle:library:334" deviceset="R-US_" device="R0603" package3d_urn="urn:adsk.eagle:package:23555/3" value="470k"/>
 <part name="R30" library="rcl" library_urn="urn:adsk.eagle:library:334" deviceset="R-US_" device="R0603" package3d_urn="urn:adsk.eagle:package:23555/3" value="1k"/>
 <part name="C14" library="rcl" library_urn="urn:adsk.eagle:library:334" deviceset="C-US" device="C0603" package3d_urn="urn:adsk.eagle:package:23616/2" value="0.1uF"/>
 <part name="C51" library="rcl" library_urn="urn:adsk.eagle:library:334" deviceset="C-US" device="C0603" package3d_urn="urn:adsk.eagle:package:23616/2" value="10uF"/>
@@ -20722,7 +20722,7 @@ type 0309, grid 2.5 mm</description>
 <part name="R20" library="rcl" library_urn="urn:adsk.eagle:library:334" deviceset="R-US_" device="R0603" package3d_urn="urn:adsk.eagle:package:23555/3" value="1k"/>
 <part name="R1" library="adafruit" library_urn="urn:adsk.eagle:library:420" deviceset="R-US_" device="R0805" package3d_urn="urn:adsk.eagle:package:6240566/1" value="2k"/>
 <part name="R2" library="adafruit" library_urn="urn:adsk.eagle:library:420" deviceset="R-US_" device="R0805" package3d_urn="urn:adsk.eagle:package:6240566/1" value="10k"/>
-<part name="CN1" library="adafruit" library_urn="urn:adsk.eagle:library:420" deviceset="DCBARREL" device="PTH" package3d_urn="urn:adsk.eagle:package:6240729/1"/>
+<part name="CN1" library="adafruit" library_urn="urn:adsk.eagle:library:420" deviceset="DCBARREL" device="PTH" package3d_urn="urn:adsk.eagle:package:6240729/1" value="SOLAR"/>
 <part name="CAMERA" library="ForestVisionParts" deviceset="TST-109-02-X-D" device=""/>
 <part name="+3V15" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="+3V3" device=""/>
 <part name="GND44" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
@@ -23156,14 +23156,24 @@ type 0309, grid 2.5 mm</description>
 <approved hash="104,1,170.18,114.3,IC1,GND1,GND,,,"/>
 <approved hash="104,1,172.72,114.3,IC1,GND2,GND,,,"/>
 <approved hash="104,1,175.26,114.3,IC1,GND3,GND,,,"/>
+<approved hash="104,2,48.26,266.7,U2PWR_CONTR,PDR_ON,+3V3,,,"/>
+<approved hash="104,2,48.26,264.16,U2PWR_CONTR,VBAT,+3V3,,,"/>
+<approved hash="104,2,48.26,261.62,U2PWR_CONTR,VCAP_1,VCAP1,,,"/>
+<approved hash="104,2,48.26,259.08,U2PWR_CONTR,VCAP_2,VCAP2,,,"/>
+<approved hash="104,2,48.26,256.54,U2PWR_CONTR,VDD,+3V3,,,"/>
+<approved hash="104,2,48.26,254,U2PWR_CONTR,VDDA,+3V3,,,"/>
+<approved hash="104,2,48.26,251.46,U2PWR_CONTR,VDDSDMMC,+3V3,,,"/>
+<approved hash="104,2,48.26,248.92,U2PWR_CONTR,VDDUSB,+3V3,,,"/>
+<approved hash="104,2,48.26,246.38,U2PWR_CONTR,VREFP,+3V3,,,"/>
+<approved hash="104,2,48.26,241.3,U2PWR_CONTR,VSS,GND,,,"/>
+<approved hash="104,2,48.26,238.76,U2PWR_CONTR,VSSA,GND,,,"/>
+<approved hash="104,3,187.96,154.94,U$9,VIN,+3V3,,,"/>
+<approved hash="104,1,35.56,170.18,CN1,PWR,N$32,,,"/>
 <approved hash="206,1,193.04,139.7,VBAT,,,,,"/>
 <approved hash="206,1,193.04,137.16,VBAT,,,,,"/>
 <approved hash="206,1,193.04,134.62,VBAT,,,,,"/>
 <approved hash="206,1,193.04,147.32,VOUT_CHARGER,,,,,"/>
 <approved hash="206,1,193.04,149.86,VOUT_CHARGER,,,,,"/>
-<approved hash="113,1,28.1771,106.454,BATT,,,,,"/>
-<approved hash="113,2,393.023,146.213,J2,,,,,"/>
-<approved hash="113,3,210.701,57.3126,L0_PROGRAM,,,,,"/>
 </errors>
 </schematic>
 </drawing>
