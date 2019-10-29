@@ -32,7 +32,7 @@ extern "C" {
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "G350.h"
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
@@ -84,10 +84,10 @@ void Error_Handler(void);
 #define NFC_MISO_GPIO_Port GPIOB
 #define NFC_MOSI_Pin GPIO_PIN_15
 #define NFC_MOSI_GPIO_Port GPIOB
-#define USART_TX_Pin GPIO_PIN_9
-#define USART_TX_GPIO_Port GPIOA
-#define USART_RX_Pin GPIO_PIN_10
-#define USART_RX_GPIO_Port GPIOA
+#define USART1_TX_Pin GPIO_PIN_9
+#define USART1_TX_GPIO_Port GPIOA
+#define USART1_RX_Pin GPIO_PIN_10
+#define USART1_RX_GPIO_Port GPIOA
 #define SWDIO_Pin GPIO_PIN_13
 #define SWDIO_GPIO_Port GPIOA
 #define SWCLK_Pin GPIO_PIN_14

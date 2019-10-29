@@ -50,6 +50,7 @@ SPI_HandleTypeDef hspi2;
 TSC_HandleTypeDef htsc;
 
 UART_HandleTypeDef huart1;
+DMA_HandleTypeDef hdma_usart1_rx;
 
 /* USER CODE BEGIN PV */
 
@@ -62,6 +63,7 @@ static void MX_I2C1_Init(void);
 static void MX_SPI1_Init(void);
 static void MX_SPI2_Init(void);
 static void MX_TSC_Init(void);
+static void MX_DMA_Init(void);
 static void MX_USART1_UART_Init(void);
 /* USER CODE BEGIN PFP */
 
@@ -105,10 +107,11 @@ int main(void)
   MX_SPI1_Init();
   MX_SPI2_Init();
   MX_TSC_Init();
+  MX_DMA_Init();
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
 
-
+/* ------------------- LUKE'S STUFF -------------------
   //Info:
   // GPIOB Pin12 is the chip select
   // GPIOB Pin8  is the RST (pull low to turn on the radio)
@@ -164,6 +167,7 @@ int main(void)
   {
 	  HAL_GPIO_WritePin(GPIOA,GPIO_PIN_5,GPIO_PIN_SET);
   }
+*/
   //send(hspi2, (uint8_t *) "abcdefghedfbjasdjasolkjoqsafichlosailkdje");
 //  uint8_t tx_buff[1] = {0x01};
 //  uint8_t rx_buff;
@@ -188,6 +192,12 @@ int main(void)
 	  HAL_GPIO_WritePin(GPIOB,GPIO_PIN_4,GPIO_PIN_RESET);
 	  while(1) {}
   }*/
+  //GSM_UART_Transmit(&huart1, "AT");
+  if (GSM_Init(&huart1) == 1)
+  {
+      GSM_Send_Text(&huart1, "+12067346538", "Hi, this is the STM32L0");
+  }
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -458,6 +468,22 @@ static void MX_USART1_UART_Init(void)
   /* USER CODE BEGIN USART1_Init 2 */
 
   /* USER CODE END USART1_Init 2 */
+
+}
+
+/** 
+  * Enable DMA controller clock
+  */
+static void MX_DMA_Init(void) 
+{
+
+  /* DMA controller clock enable */
+  __HAL_RCC_DMA1_CLK_ENABLE();
+
+  /* DMA interrupt init */
+  /* DMA1_Channel2_3_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Channel2_3_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Channel2_3_IRQn);
 
 }
 
