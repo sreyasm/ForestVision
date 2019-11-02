@@ -192,9 +192,11 @@ int main(void)
 	  HAL_GPIO_WritePin(GPIOB,GPIO_PIN_4,GPIO_PIN_RESET);
 	  while(1) {}
   }*/
-  //GSM_UART_Transmit(&huart1, "AT");
+
+  // If the Init function runs without any errors
   if (GSM_Init(&huart1) == 1)
   {
+      // Send the text message to this phone number, with the following message content.
       GSM_Send_Text(&huart1, "+12067346538", "Hi, this is the STM32L0");
   }
 
