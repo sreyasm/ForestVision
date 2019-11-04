@@ -5,7 +5,7 @@ ser = serial.Serial(
     port='COM12',
     baudrate=115200,
 )
-data = ser.read(153666)
+data = ser.read(230454)
 print('Recieved Data!')
 ser.close()
 file = open('data.bmp', 'wb')
