@@ -425,9 +425,9 @@ static void MX_TSC_Init(void)
   htsc.Init.SynchroPinPolarity = TSC_SYNC_POLARITY_FALLING;
   htsc.Init.AcquisitionMode = TSC_ACQ_MODE_NORMAL;
   htsc.Init.MaxCountInterrupt = DISABLE;
-  htsc.Init.ChannelIOs = TSC_GROUP1_IO3|TSC_GROUP2_IO3|TSC_GROUP3_IO2;
+  htsc.Init.ChannelIOs = TSC_GROUP2_IO3|TSC_GROUP3_IO2;
   htsc.Init.ShieldIOs = 0;
-  htsc.Init.SamplingIOs = TSC_GROUP1_IO4|TSC_GROUP2_IO4|TSC_GROUP3_IO3;
+  htsc.Init.SamplingIOs = TSC_GROUP2_IO4|TSC_GROUP3_IO3;
   if (HAL_TSC_Init(&htsc) != HAL_OK)
   {
     Error_Handler();
@@ -528,6 +528,14 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(MFX_WAKEUP_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : PA2 PA3 */
+  GPIO_InitStruct.Pin = GPIO_PIN_2|GPIO_PIN_3;
+  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+  GPIO_InitStruct.Alternate = GPIO_AF4_USART2;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /*Configure GPIO pins : LD_R_Pin PA8 */
   GPIO_InitStruct.Pin = LD_R_Pin|GPIO_PIN_8;

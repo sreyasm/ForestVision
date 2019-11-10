@@ -10,111 +10,112 @@
 // Refer below for how that works.
 int GSM_Init(UART_HandleTypeDef * huart)
 {
-    int stat;
-
-    stat = GSM_UART_Transmit_Wait(huart, "AT", 1, 200);
-    if (stat != 1)
+    if (Attempt_GSM_UART_Transmit_Wait(huart, "AT", 1, 200) != 1)
     {
         return 0;
     }
 
-    stat = GSM_UART_Transmit_Wait(huart, "ATE0", 1, 200);
-    if (stat != 1)
+    if (Attempt_GSM_UART_Transmit_Wait(huart, "ATE0", 1, 200) != 1)
     {
         return 0;
     }
 
-    stat = GSM_UART_Transmit_Wait(huart, "AT+CMEE=2", 1, 200);
-    if (stat != 1)
+    if (Attempt_GSM_UART_Transmit_Wait(huart, "AT+CMEE=2", 1, 200) != 1)
     {
         return 0;
     }
 
-    stat = GSM_UART_Transmit_Wait(huart, "AT+CGMI", 1, 200);
-    if (stat != 1)
+    if (Attempt_GSM_UART_Transmit_Wait(huart, "AT+CGMI", 1, 200) != 1)
     {
         return 0;
     }
 
-    stat = GSM_UART_Transmit_Wait(huart, "AT+CGMM", 1, 200);
-    if (stat != 1)
+    if (Attempt_GSM_UART_Transmit_Wait(huart, "AT+CGMM", 1, 200) != 1)
     {
         return 0;
     }
 
-    stat = GSM_UART_Transmit_Wait(huart, "AT+CGMR", 1, 200);
-    if (stat != 1)
+    if (Attempt_GSM_UART_Transmit_Wait(huart, "AT+CGMR", 1, 200) != 1)
     {
         return 0;
     }
 
-    stat = GSM_UART_Transmit_Wait(huart, "ATI9", 1, 200);
-    if (stat != 1)
+    if (Attempt_GSM_UART_Transmit_Wait(huart, "ATI9", 1, 200) != 1)
     {
         return 0;
     }
 
-    stat = GSM_UART_Transmit_Wait(huart, "AT+CLCK=\"SC\",2", 1, 200);
-    if (stat != 1)
+    if (Attempt_GSM_UART_Transmit_Wait(huart, "AT+CLCK=\"SC\",2", 1, 200) != 1)
     {
         return 0;
     }
 
-    stat = GSM_UART_Transmit_Wait(huart, "AT+CPIN?", 1, 200);
-    if (stat != 1)
+    if (Attempt_GSM_UART_Transmit_Wait(huart, "AT+CPIN?", 1, 200) != 1)
     {
         return 0;
     }
 
-    stat = GSM_UART_Transmit_Wait(huart, "AT+UPSV?", 1, 200);
-    if (stat != 1)
+    if (Attempt_GSM_UART_Transmit_Wait(huart, "AT+UPSV?", 1, 200) != 1)
     {
         return 0;
     }
 
-    stat = GSM_UART_Transmit_Wait(huart, "AT+CCLK?", 1, 200);
-    if (stat != 1)
+    if (Attempt_GSM_UART_Transmit_Wait(huart, "AT+CCLK?", 1, 200) != 1)
     {
         return 0;
     }
 
-    stat = GSM_UART_Transmit_Wait(huart, "AT+CGSN", 1, 200);
-    if (stat != 1)
+    if (Attempt_GSM_UART_Transmit_Wait(huart, "AT+CGSN", 1, 200) != 1)
     {
         return 0;
     }
 
-    stat = GSM_UART_Transmit_Wait(huart, "AT+COPS?", 1, 200);
-    if (stat != 1)
+    if (Attempt_GSM_UART_Transmit_Wait(huart, "AT+COPS?", 1, 200) != 1)
     {
         return 0;
     }
 
-    stat = GSM_UART_Transmit_Wait(huart, "AT+CREG=2", 1, 200);
-    if (stat != 1)
+    if (Attempt_GSM_UART_Transmit_Wait(huart, "AT+CREG=2", 1, 200) != 1)
     {
         return 0;
     }
 
-    stat = GSM_UART_Transmit_Wait(huart, "AT+CREG?", 1, 200);
-    if (stat != 1)
+    if (Attempt_GSM_UART_Transmit_Wait(huart, "AT+CREG?", 1, 200) != 1)
     {
         return 0;
     }
 
-    stat = GSM_UART_Transmit_Wait(huart, "AT+CREG=0", 1, 200);
-    if (stat != 1)
+    if (Attempt_GSM_UART_Transmit_Wait(huart, "AT+CREG=0", 1, 200) != 1)
     {
         return 0;
     }
 
-    stat = GSM_UART_Transmit_Wait(huart, "AT+CSQ", 1, 200);
-    if (stat != 1)
+    if (Attempt_GSM_UART_Transmit_Wait(huart, "AT+CSQ", 1, 200) != 1)
     {
         return 0;
     }
 
     return 1;
+}
+
+// This function calls GSM_UART_Transmit_Wait 5 times in case the GSM for some reason fails
+// to reply with 'OK' the first few times. This is to ensure that the microcontroller makes
+// multiple attempts to send a command to the GSM before it reports that it fails.
+int Attempt_GSM_UART_Transmit_Wait(UART_HandleTypeDef * huart, char * command, int ok_check, int wait_duration)
+{
+    // Attempt to sent the command 5 times
+    for (int i = 0; i < 5; i++)
+    {
+        if (GSM_UART_Transmit_Wait(huart, command, ok_check, wait_duration) == 1)
+        {
+            // If the command was received properly by the GSM, return 1
+            return 1;
+        }
+    }
+
+    // If program reaches this point, GSM never sends an 'OK'
+    // or there is a problem with the UART transmission. Hence, return 0
+    return 0;
 }
 
 // This function transmits a single AT command with a wait_duration parameter.
@@ -196,26 +197,43 @@ int OK_PRESENCE(char * buffer)
 // Also, make sure phone_number has a "+1" at the front. Otherwise, it will fail.
 int GSM_Send_Text(UART_HandleTypeDef * huart, char * phone_number, char * message)
 {
-    int stat;
-
-    stat = GSM_UART_Transmit_Wait(huart, "AT+CSCA?", 1, 200);
-    if (stat != 1)
+    if (Attempt_GSM_UART_Transmit_Wait(huart, "AT+CSCA?", 1, 200) != 1)
     {
         return 0;
     }
 
-    stat = GSM_UART_Transmit_Wait(huart, "AT+CNMI?", 1, 200);
-    if (stat != 1)
+    if (Attempt_GSM_UART_Transmit_Wait(huart, "AT+CNMI?", 1, 200) != 1)
     {
         return 0;
     }
 
-    stat = GSM_UART_Transmit_Wait(huart, "AT+CMGF=1", 1, 200);
-    if (stat != 1)
+    if (Attempt_GSM_UART_Transmit_Wait(huart, "AT+CMGF=1", 1, 200) != 1)
     {
         return 0;
     }
 
+    /*
+    if (Attempt_GSM_UART_Transmit_Msg(huart, full_command, 0, 200) != 1)
+    {
+        return 0;
+    }
+
+    // Transmit the actual message contents of the SMS to be sent
+    if (Attempt_GSM_UART_Transmit_Msg(huart, message, 1) != 1)
+    {
+        return 0;
+    }*/
+
+    if (Attempt_GSM_UART_Transmit_Msg(huart, phone_number, message) != 1)
+    {
+        return 0;
+    }
+
+    return 1;
+}
+
+int Attempt_GSM_UART_Transmit_Msg(UART_HandleTypeDef * huart, char * phone_number, char * message)
+{
     // Get string length + 10, since we need to prepend the proper
     // AT command to the buffer before transmitting it to the GSM
     int command_length = ((int) strlen(phone_number)) + 10;
@@ -229,20 +247,23 @@ int GSM_Send_Text(UART_HandleTypeDef * huart, char * phone_number, char * messag
     // At this point, the three lines of code above will make
     // full_command = AT+CMGS="phone_number"
 
-    stat = GSM_UART_Transmit_Wait(huart, full_command, 0, 200);
-    if (stat != 1)
+    // Make 5 attempts at sending a text message
+    for (int i = 0; i < 5; i++)
     {
-        return 0;
+        // Command to send a text message
+        if (Attempt_GSM_UART_Transmit_Wait(huart, full_command, 0, 200) != 1)
+        {
+            return 0;
+        }
+
+        // Transmit the actual message contents of the SMS to be sent
+        if (GSM_UART_Transmit_Msg(huart, message, 1) == 1)
+        {
+            return 1;
+        }
     }
 
-    // Transmit the actual message contents of the SMS to be sent
-    stat = GSM_UART_Transmit_Msg(huart, message, 1);
-    if (stat != 1)
-    {
-        return 0;
-    }
-
-    return 1;
+    return 0;
 }
 
 // This function is similar to GSM_UART_Transmit_Wait, except the following:
@@ -253,13 +274,13 @@ int GSM_Send_Text(UART_HandleTypeDef * huart, char * phone_number, char * messag
 //        For a full explanation of exactly why the <Ctrl-Z> is needed, go to:
 //          https://www.u-blox.com/sites/default/files/u-blox-CEL_ATCommands_%28UBX-13002752%29.pdf
 //        and go to page 228, under '11.15 Send message +CMGS', read the 11.15.1 Description.
-int GSM_UART_Transmit_Msg(UART_HandleTypeDef * huart, char * command, int ok_check)
+int GSM_UART_Transmit_Msg(UART_HandleTypeDef * huart, char * message, int ok_check)
 {
     // Get string length + 2, since we need to append <Ctrl-Z> and CR (carriage return) to the string
-    int length = ((int) strlen(command)) + 2;
+    int length = ((int) strlen(message)) + 2;
 
     char full_command[length]; // Initialize buffer to send to GSM via UART
-    strcpy(full_command, command); // Copy message into buffer
+    strcpy(full_command, message); // Copy message into buffer
 
     // Append <Ctrl-Z> (0x1A) and CR to string (0xD).
     // <Ctrl-Z> is required here since it is specified in the u-blox AT command
