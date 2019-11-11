@@ -92,6 +92,10 @@ int main(void)
   MX_I2C2_Init();
   /* USER CODE BEGIN 2 */
 
+  FG_I2C_Setup(&hi2c2);
+  uint16_t battery_percentage = FG_I2C_Read_SOC(&hi2c2);
+  //uint16_t voltage_reading = FG_I2C_Read_Voltage(&hi2c2);
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
