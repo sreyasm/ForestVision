@@ -5,6 +5,8 @@
 #include <string.h>
 #include "stm32l0xx_hal.h"
 
+#define GSM_SEND_BUFFER_SIZE 25
+
 int GSM_Init(UART_HandleTypeDef *);
 int Attempt_GSM_UART_Transmit_Wait(UART_HandleTypeDef *, char *, int, int);
 int GSM_UART_Transmit_Wait(UART_HandleTypeDef *, char *, int, int);

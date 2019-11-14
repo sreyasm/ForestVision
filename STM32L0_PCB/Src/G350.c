@@ -128,10 +128,10 @@ int Attempt_GSM_UART_Transmit_Wait(UART_HandleTypeDef * huart, char * command, i
 int GSM_UART_Transmit_Wait(UART_HandleTypeDef * huart, char * command, int ok_check, int wait_duration)
 {
     // Get string length + 1, since we need to append CR (carriage return) to the string
-    int length = ((int) strlen(command)) + 1;
+    //int length = ((int) strlen(command)) + 1;
 
     // Initialize buffer to send to GSM via UART
-    char full_command[length];
+    char full_command[GSM_SEND_BUFFER_SIZE] = "";
     strcpy(full_command, command); // Copy message into buffer
     strcat(full_command, "\x0D"); // Append CR to string (0xD)
 
@@ -148,7 +148,7 @@ int GSM_UART_Transmit_Wait(UART_HandleTypeDef * huart, char * command, int ok_ch
     }
 
     // Transmit the message to GSM via UART
-    stat = HAL_UART_Transmit(huart, (uint8_t *) full_command, length, 30);
+    stat = HAL_UART_Transmit(huart, (uint8_t *) full_command, (uint16_t) strlen(full_command), 30);
     if (stat != HAL_OK)
     {
         return 0;
@@ -228,10 +228,10 @@ int Attempt_GSM_UART_Transmit_Msg(UART_HandleTypeDef * huart, char * phone_numbe
 {
     // Get string length + 10, since we need to prepend the proper
     // AT command to the buffer before transmitting it to the GSM
-    int command_length = ((int) strlen(phone_number)) + 10;
+    //int command_length = ((int) strlen(phone_number)) + 10;
 
     // Initialize buffer to send to GSM via UART
-    char full_command[command_length];
+    char full_command[GSM_SEND_BUFFER_SIZE] = "";
     strcpy(full_command, "AT+CMGS=\"");
     strcat(full_command, phone_number);
     strcat(full_command, "\"");
@@ -271,9 +271,9 @@ int Attempt_GSM_UART_Transmit_Msg(UART_HandleTypeDef * huart, char * phone_numbe
 int GSM_UART_Transmit_Msg(UART_HandleTypeDef * huart, char * message, int ok_check)
 {
     // Get string length + 2, since we need to append <Ctrl-Z> and CR (carriage return) to the string
-    int length = ((int) strlen(message)) + 2;
+    //int length = ((int) strlen(message)) + 2;
 
-    char full_command[length]; // Initialize buffer to send to GSM via UART
+    char full_command[GSM_SEND_BUFFER_SIZE] = ""; // Initialize buffer to send to GSM via UART
     strcpy(full_command, message); // Copy message into buffer
 
     // Append <Ctrl-Z> (0x1A) and CR to string (0xD).
@@ -294,7 +294,7 @@ int GSM_UART_Transmit_Msg(UART_HandleTypeDef * huart, char * message, int ok_che
     }
 
     // Transmit the message to GSM via UART
-    stat = HAL_UART_Transmit(huart, (uint8_t *) full_command, length, 30);
+    stat = HAL_UART_Transmit(huart, (uint8_t *) full_command, (uint16_t) strlen(full_command), 30);
     if (stat != HAL_OK)
     {
         return 0;
