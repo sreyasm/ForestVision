@@ -24,7 +24,8 @@ Src/system_stm32l0xx.o: ../Src/system_stm32l0xx.c \
  D:/STM32/workspace/32L0_477/Drivers/STM32L0xx_HAL_Driver/Inc/stm32l0xx_hal_pwr.h \
  D:/STM32/workspace/32L0_477/Drivers/STM32L0xx_HAL_Driver/Inc/stm32l0xx_hal_pwr_ex.h \
  D:/STM32/workspace/32L0_477/Drivers/STM32L0xx_HAL_Driver/Inc/stm32l0xx_hal_spi.h \
- D:/STM32/workspace/32L0_477/Drivers/STM32L0xx_HAL_Driver/Inc/stm32l0xx_hal_tsc.h \
+ D:/STM32/workspace/32L0_477/Drivers/STM32L0xx_HAL_Driver/Inc/stm32l0xx_hal_tim.h \
+ D:/STM32/workspace/32L0_477/Drivers/STM32L0xx_HAL_Driver/Inc/stm32l0xx_hal_tim_ex.h \
  D:/STM32/workspace/32L0_477/Drivers/STM32L0xx_HAL_Driver/Inc/stm32l0xx_hal_uart.h \
  D:/STM32/workspace/32L0_477/Drivers/STM32L0xx_HAL_Driver/Inc/stm32l0xx_hal_uart_ex.h
 
@@ -78,7 +79,9 @@ D:/STM32/workspace/32L0_477/Drivers/STM32L0xx_HAL_Driver/Inc/stm32l0xx_hal_pwr_e
 
 D:/STM32/workspace/32L0_477/Drivers/STM32L0xx_HAL_Driver/Inc/stm32l0xx_hal_spi.h:
 
-D:/STM32/workspace/32L0_477/Drivers/STM32L0xx_HAL_Driver/Inc/stm32l0xx_hal_tsc.h:
+D:/STM32/workspace/32L0_477/Drivers/STM32L0xx_HAL_Driver/Inc/stm32l0xx_hal_tim.h:
+
+D:/STM32/workspace/32L0_477/Drivers/STM32L0xx_HAL_Driver/Inc/stm32l0xx_hal_tim_ex.h:
 
 D:/STM32/workspace/32L0_477/Drivers/STM32L0xx_HAL_Driver/Inc/stm32l0xx_hal_uart.h:
 

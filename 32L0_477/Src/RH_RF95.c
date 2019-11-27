@@ -55,6 +55,8 @@ bool send(SPI_HandleTypeDef hspi2, GPIO_TypeDef* cs, const uint8_t* data)
 	spiWrite(hspi2, cs, RH_RF95_REG_22_PAYLOAD_LENGTH, strlen(data));
 
     setModeTx(hspi2, cs); // Start the transmitter
+
+    HAL_Delay(1000);
     // when Tx is done, interruptHandler will fire and radio mode will return to STANDBY
     return true;
 }
@@ -62,12 +64,16 @@ bool send(SPI_HandleTypeDef hspi2, GPIO_TypeDef* cs, const uint8_t* data)
 //set the LoRa module to Rx mode
 void setModeRx(SPI_HandleTypeDef hspi2, GPIO_TypeDef* cs)
 {
+	spiWrite(hspi2,GPIOB,0x12,0xff); //clear any flags that is high
+	spiWrite(hspi2,GPIOB,0x12,0xff);
 	spiWrite(hspi2, cs, RH_RF95_REG_01_OP_MODE, RH_RF95_MODE_RXCONTINUOUS);
 }
 
 //set the LoRa module to Tx mode
 void setModeTx(SPI_HandleTypeDef hspi2, GPIO_TypeDef* cs)
 {
+	spiWrite(hspi2,GPIOB,0x12,0xff); //clear any flags that is high
+	spiWrite(hspi2,GPIOB,0x12,0xff);
 	spiWrite(hspi2, cs, RH_RF95_REG_01_OP_MODE, RH_RF95_MODE_TX);
 }
 
@@ -101,4 +107,26 @@ uint8_t spiRead(SPI_HandleTypeDef hspi2, GPIO_TypeDef* cs,uint8_t reg) //need to
 	HAL_GPIO_WritePin(cs,GPIO_PIN_12,GPIO_PIN_SET);
 
 	return output;
+}
+
+void spiReadbuff(SPI_HandleTypeDef hspi2, GPIO_TypeDef* cs, uint8_t* buffer)
+{
+	uint8_t bytelength;
+	uint8_t byte;
+	uint8_t rxcurrentaddr;
+
+	//set the pointer accordingly to point to rx_data
+	rxcurrentaddr = spiRead(hspi2,GPIOB,0x10);
+	spiWrite(hspi2,GPIOB,0x0D,rxcurrentaddr);
+
+	//get the size of packet
+	bytelength = spiRead(hspi2,cs,0x13);
+
+	//read the data to the buffer(max size of 256)
+	for(int store = 0; store < bytelength; store++)
+	{
+	  byte = spiRead(hspi2,GPIOB,0x00);
+	  memcpy(&(buffer[store]),&byte,1);
+	  if (byte == 0x0) {break;}
+	}
 }

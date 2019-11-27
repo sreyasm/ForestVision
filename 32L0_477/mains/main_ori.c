@@ -20,10 +20,11 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "mesh.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "mesh.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -81,41 +82,16 @@ void set_tim2(int sec) //Note: Once the timer is set, you have to wait till it f
 	HAL_TIM_Base_Start_IT(&htim2);
 }
 
-void stop_tim2()
-{
-	HAL_TIM_Base_Stop_IT(&htim2);
-}
-
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
 	if(htim == &htim2)
 	{
 		if(first == 0) {first = 1; return;}
-		HAL_GPIO_TogglePin(GPIOB,GPIO_PIN_4);
-		HAL_GPIO_TogglePin(LED1_GPIO_Port,LED1_Pin);
-		interrupt = TIMEOUT;
-
+		//HAL_GPIO_TogglePin(GPIOB,GPIO_PIN_4);
+		interrupt_ACK = TIMEOUT;
 		HAL_TIM_Base_Stop_IT(htim);
 	}
 }
-
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
-{
-	if(GPIO_Pin == GPIO_PIN_8) //For GPIOA_8 (Lora Interrupt)
-	{
-		HAL_GPIO_TogglePin(GPIOA,GPIO_PIN_5);
-		HAL_GPIO_TogglePin(LED2_GPIO_Port,LED2_Pin);
-		interrupt = LORA_PACKET;
-	}
-}
-
-void UART_send(uint8_t* data)
-{
-	HAL_UART_Transmit(&(huart1),data,strlen(data),30);
-	HAL_UART_Transmit(&(huart1),"\x0D\x0A",2,30);
-	HAL_Delay(100);
-}
-
 /* USER CODE END 0 */
 
 /**
@@ -172,124 +148,6 @@ int main(void)
 	  HAL_GPIO_WritePin(GPIOA,GPIO_PIN_5,GPIO_PIN_SET);
 	  HAL_GPIO_WritePin(LED2_GPIO_Port,LED2_Pin,GPIO_PIN_SET);
   }
-
-  //Init for GPIOB interrupt pin (LORA_INT)
-  HAL_NVIC_EnableIRQ(EXTI4_15_IRQn);
-//  if (req_ID(hspi2,GPIOB,1,4) == 0)
-//  {
-//
-//	 //fail to get ID, become the ID
-//	  HAL_GPIO_WritePin(GPIOB,GPIO_PIN_4,GPIO_PIN_SET);
-//	  HAL_GPIO_WritePin(LED1_GPIO_Port,LED1_Pin,GPIO_PIN_SET);
-//	  send(hspi2,GPIOB,"Timeout Successful");
-//  }
-  UART_send("New");
-  self_ID = SELF_ID;
-  uint8_t data[256];
-
-  Init_timeout();
-  Init_RT();
-  Print_RT();
-
-  set_tim2(UPDATE_PERIOD);
-  setModeRx(hspi2,GPIOB);
-
-  while(1)
-  {
-	  do{asm("wfi");}while(interrupt == OTHERS);
-	  if(spiRead(hspi2,GPIOB,0x12) & 0x80 == 0x80) //rx_timeout
-		{
-		  //tell UART about the timeout
-		  UART_send("RX_Timeout\x0D\x0A");
-
-		  //clear the flag and restart
-		  spiWrite(hspi2,GPIOB,0x12,0xff);
-		  spiWrite(hspi2,GPIOB,0x12,0xff);
-
-		  //Reset
-		  setModeRx(hspi2,GPIOB);
-		}
-	  if(interrupt == LORA_PACKET){
-		interrupt = OTHERS;
-		HAL_Delay(1000);
-		spiReadbuff(hspi2,GPIOB,data);
-		if(data[TYPE] == UPDATE_PACKET)
-		{
-			Convert_Pkt_to_Table(data);
-			Update_timeout(sender_ID);
-			Update_Packet();
-			Print_RT();
-		}
-		setModeRx(hspi2,GPIOB);
-	  }
-	  else if(interrupt == TIMEOUT)
-	  {
-		  interrupt = OTHERS;
-		  Convert_Table_to_Pkt(data);
-		  send(hspi2, GPIOB, data);
-		  setModeRx(hspi2,GPIOB);
-		  set_tim2(UPDATE_PERIOD);
-		  UART_send("Updated neighbors");
-	  }
-  }
-  while(1);
-
-  self_ID = get_ID(hspi2,GPIOB);
-  //send self_ID to UART
-  uint8_t temp[10];
-  sprintf(temp,"%d",self_ID);
-  HAL_UART_Transmit(&(huart1),"Self_ID: ",9,30);
-  HAL_UART_Transmit(&(huart1),temp,strlen(temp),30);
-  HAL_UART_Transmit(&(huart1),"\x0D\x0A",2,30);
-
-  //Init: Init timeout_table
-  Init_timeout();
-  Fill_timeout(hspi2,GPIOB);
-  print_timeout();
-
-  req_ACK_UUID = 0;
-  resp_ACK_UUID = 0;
-  while(1)
-  {
-//	  HAL_NVIC_ClearPendingIRQ(EXTI4_15_IRQn);
-//	  HAL_NVIC_EnableIRQ(EXTI4_15_IRQn);
-	  interrupt = OTHERS;
-	  setModeRx(hspi2,GPIOB);
-
-	  do{asm("wfi");}while(interrupt == OTHERS);
-	  HAL_Delay(1500);
-	  if(interrupt == LORA_PACKET){
-		interrupt = OTHERS;
-		spiReadbuff(hspi2,GPIOB,data);
-		if(data[TYPE] == RESP_ID || data[TYPE] == REQ_ID) {
-			resp_ID(hspi2, GPIOB,(uint8_t *)data);
-		}
-		if(data[TYPE] == REQ_ACK){
-			resp_ACK(hspi2,GPIOB,(uint8_t *)data);
-		}
-	  }
-	  else if(interrupt == TIMEOUT){
-		  interrupt = OTHERS;
-		  //send update to everyone
-		  //check for dead router
-	  }
-  }
-
-  send(hspi2,GPIOB,"SetRX");
-
-  HAL_Delay(100);
-  spiWrite(hspi2,GPIOB,0x12,0xff);
-  spiWrite(hspi2,GPIOB,0x12,0xff);
-  setModeRx(hspi2,GPIOB);
-
-
-  while(spiRead(hspi2,GPIOB,0x12)==0);
-  HAL_GPIO_TogglePin(GPIOB,GPIO_PIN_4);
-  HAL_GPIO_TogglePin(LED1_GPIO_Port,LED1_Pin);
-
-  while(1);
-
-
   send(hspi2,GPIOB,"This is from the second micro");
   rx_buff = spiRead(hspi2,GPIOB,0x12); //0x12 is IrqFlag
 
@@ -368,7 +226,7 @@ int main(void)
 	  HAL_GPIO_WritePin(LED2_GPIO_Port,LED2_Pin,GPIO_PIN_SET);
   }
 
-  if(self_ID || rx_buff == rx_buff2 && bytelength == (h1 || h2 || h3 || h4 || SPIptr || rxcurrentaddr || txbaseaddr || rxbaseaddr || rx_buff2_new) && buffer == "")
+  if(rx_buff == rx_buff2 && bytelength == (h1 || h2 || h3 || h4 || SPIptr || rxcurrentaddr || txbaseaddr || rxbaseaddr || rx_buff2_new) && buffer == "")
   {
 	  HAL_GPIO_WritePin(GPIOA,GPIO_PIN_5,GPIO_PIN_SET);
   }
@@ -738,13 +596,16 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, GSM_RST_Pin|DEVLED_R_Pin|LORA_EN_Pin|LORA_RST_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, GSM_RST_Pin|DEVLED_R_Pin|LORA_INT_Pin|LORA_EN_Pin 
+                          |LORA_RST_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, LED2_Pin|LED1_Pin|LORA_NSS_Pin|DEVLED_G_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pins : GSM_RST_Pin DEVLED_R_Pin LORA_EN_Pin LORA_RST_Pin */
-  GPIO_InitStruct.Pin = GSM_RST_Pin|DEVLED_R_Pin|LORA_EN_Pin|LORA_RST_Pin;
+  /*Configure GPIO pins : GSM_RST_Pin DEVLED_R_Pin LORA_INT_Pin LORA_EN_Pin 
+                           LORA_RST_Pin */
+  GPIO_InitStruct.Pin = GSM_RST_Pin|DEVLED_R_Pin|LORA_INT_Pin|LORA_EN_Pin 
+                          |LORA_RST_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -756,16 +617,6 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : LORA_INT_Pin */
-  GPIO_InitStruct.Pin = LORA_INT_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(LORA_INT_GPIO_Port, &GPIO_InitStruct);
-
-  /* EXTI interrupt init*/
-  HAL_NVIC_SetPriority(EXTI4_15_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(EXTI4_15_IRQn);
 
 }
 

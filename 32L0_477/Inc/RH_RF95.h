@@ -2,6 +2,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include "stm32l0xx_hal.h"
+#include "main.h"
 
 
 // This is the maximum number of interrupts the driver can support
@@ -218,3 +219,4 @@ void setModeTx(SPI_HandleTypeDef, GPIO_TypeDef*);
 void spiWrite(SPI_HandleTypeDef, GPIO_TypeDef* ,uint8_t, uint8_t);
 void spiBurstWrite(SPI_HandleTypeDef, GPIO_TypeDef* ,uint8_t, const uint8_t*);
 uint8_t spiRead(SPI_HandleTypeDef, GPIO_TypeDef*,uint8_t);
+void spiReadbuff(SPI_HandleTypeDef, GPIO_TypeDef*, uint8_t *);

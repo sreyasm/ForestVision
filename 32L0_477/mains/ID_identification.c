@@ -105,7 +105,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 	{
 		HAL_GPIO_TogglePin(GPIOA,GPIO_PIN_5);
 		HAL_GPIO_TogglePin(LED2_GPIO_Port,LED2_Pin);
-		interrupt = LORA_PACKET;
+		if(interrupt == OTHERS){ interrupt = LORA_PACKET;}
 	}
 }
 
@@ -183,56 +183,6 @@ int main(void)
 //	  HAL_GPIO_WritePin(LED1_GPIO_Port,LED1_Pin,GPIO_PIN_SET);
 //	  send(hspi2,GPIOB,"Timeout Successful");
 //  }
-  UART_send("New");
-  self_ID = SELF_ID;
-  uint8_t data[256];
-
-  Init_timeout();
-  Init_RT();
-  Print_RT();
-
-  set_tim2(UPDATE_PERIOD);
-  setModeRx(hspi2,GPIOB);
-
-  while(1)
-  {
-	  do{asm("wfi");}while(interrupt == OTHERS);
-	  if(spiRead(hspi2,GPIOB,0x12) & 0x80 == 0x80) //rx_timeout
-		{
-		  //tell UART about the timeout
-		  UART_send("RX_Timeout\x0D\x0A");
-
-		  //clear the flag and restart
-		  spiWrite(hspi2,GPIOB,0x12,0xff);
-		  spiWrite(hspi2,GPIOB,0x12,0xff);
-
-		  //Reset
-		  setModeRx(hspi2,GPIOB);
-		}
-	  if(interrupt == LORA_PACKET){
-		interrupt = OTHERS;
-		HAL_Delay(1000);
-		spiReadbuff(hspi2,GPIOB,data);
-		if(data[TYPE] == UPDATE_PACKET)
-		{
-			Convert_Pkt_to_Table(data);
-			Update_timeout(sender_ID);
-			Update_Packet();
-			Print_RT();
-		}
-		setModeRx(hspi2,GPIOB);
-	  }
-	  else if(interrupt == TIMEOUT)
-	  {
-		  interrupt = OTHERS;
-		  Convert_Table_to_Pkt(data);
-		  send(hspi2, GPIOB, data);
-		  setModeRx(hspi2,GPIOB);
-		  set_tim2(UPDATE_PERIOD);
-		  UART_send("Updated neighbors");
-	  }
-  }
-  while(1);
 
   self_ID = get_ID(hspi2,GPIOB);
   //send self_ID to UART
@@ -247,6 +197,7 @@ int main(void)
   Fill_timeout(hspi2,GPIOB);
   print_timeout();
 
+  uint8_t data[256];
   req_ACK_UUID = 0;
   resp_ACK_UUID = 0;
   while(1)
