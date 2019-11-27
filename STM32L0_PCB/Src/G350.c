@@ -127,9 +127,6 @@ int Attempt_GSM_UART_Transmit_Wait(UART_HandleTypeDef * huart, char * command, i
 // specify it as 1 if you want to check for it, 0 otherwise.
 int GSM_UART_Transmit_Wait(UART_HandleTypeDef * huart, char * command, int ok_check, int wait_duration)
 {
-    // Get string length + 1, since we need to append CR (carriage return) to the string
-    //int length = ((int) strlen(command)) + 1;
-
     // Initialize buffer to send to GSM via UART
     char full_command[GSM_SEND_BUFFER_SIZE] = "";
     strcpy(full_command, command); // Copy message into buffer
@@ -242,8 +239,6 @@ int Attempt_GSM_UART_Transmit_Msg(UART_HandleTypeDef * huart, char * phone_numbe
     // Make 5 attempts at sending a text message
     for (int i = 0; i < 5; i++)
     {
-        HAL_Delay(5000);
-
         // Command to send a text message
         if (Attempt_GSM_UART_Transmit_Wait(huart, full_command, 0, 200) != 1)
         {
@@ -270,9 +265,6 @@ int Attempt_GSM_UART_Transmit_Msg(UART_HandleTypeDef * huart, char * phone_numbe
 //        and go to page 228, under '11.15 Send message +CMGS', read the 11.15.1 Description.
 int GSM_UART_Transmit_Msg(UART_HandleTypeDef * huart, char * message, int ok_check)
 {
-    // Get string length + 2, since we need to append <Ctrl-Z> and CR (carriage return) to the string
-    //int length = ((int) strlen(message)) + 2;
-
     char full_command[GSM_SEND_BUFFER_SIZE] = ""; // Initialize buffer to send to GSM via UART
     strcpy(full_command, message); // Copy message into buffer
 

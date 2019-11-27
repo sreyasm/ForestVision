@@ -106,48 +106,23 @@ int main(void)
 
   HAL_Delay(5000);
 
-  uint16_t bat_percent = FG_I2C_Read_SOC(&hi2c2);
-
-  if (bat_percent)
+  if (text_update(&huart2, &hi2c2, 1, 1, 0))
   {
-      asm("nop");
-  } else {}
-
-  volatile char full_msg[14] = "1, ALIVE, ";
-
-  //int bat_percent = (int) (unsigned) battery_percentage;
-
-  if (bat_percent < 10) // Battery percentage is 1 digit
-  {
-      full_msg[10] = bat_percent + '0';
-      full_msg[11] = '\0';
-      full_msg[12] = '\0';
-      full_msg[13] = '\0';
-  }
-  else if (bat_percent < 100) // Battery percentage is 2 digits
-  {
-      uint16_t dig1 = bat_percent / 10;
-      uint16_t dig2 = bat_percent % 10;
-
-      full_msg[10] = dig1 + '0';
-      full_msg[11] = dig2 + '0';
-      full_msg[12] = '\0';
-      full_msg[13] = '\0';
-  }
-  else // Battery is at 100%
-  {
-      full_msg[10] = '1';
-      full_msg[11] = '0';
-      full_msg[12] = '0';
-      full_msg[13] = '\0';
+      while(1)
+      {
+          HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, GPIO_PIN_SET);
+          HAL_Delay(500);
+          HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, GPIO_PIN_RESET);
+          HAL_Delay(500);
+      }
   }
 
   // --- GSM STUFF ---
-  if (GSM_Init(&huart2) == 1)
+  /*if (GSM_Init(&huart2) == 1)
   {
       HAL_Delay(5000);
       HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, GPIO_PIN_SET);
-      int i = GSM_Send_Text(&huart2, "+12512610341", full_msg);
+      int i = GSM_Send_Text(&huart2, "+12067346538", full_msg);
       if (i)
       {
           while(1)
@@ -158,7 +133,7 @@ int main(void)
               HAL_Delay(500);
           }
       }
-  }
+  }*/
 
   /* USER CODE END 2 */
 
@@ -167,7 +142,7 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-    HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, GPIO_PIN_SET);
+
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
@@ -331,17 +306,17 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GSM_RST_GPIO_Port, GSM_RST_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, LED2_Pin|LED1_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pin : PA4 */
-  GPIO_InitStruct.Pin = GPIO_PIN_4;
+  /*Configure GPIO pin : GSM_RST_Pin */
+  GPIO_InitStruct.Pin = GSM_RST_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+  HAL_GPIO_Init(GSM_RST_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : LED2_Pin LED1_Pin */
   GPIO_InitStruct.Pin = LED2_Pin|LED1_Pin;

@@ -34,6 +34,7 @@ extern "C" {
 /* USER CODE BEGIN Includes */
 #include "G350.h"
 #include "fuel_gauge.h"
+#include "text_update.h"
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
@@ -59,10 +60,20 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define GSM_TX_Pin GPIO_PIN_2
+#define GSM_TX_GPIO_Port GPIOA
+#define GSM_RX_Pin GPIO_PIN_3
+#define GSM_RX_GPIO_Port GPIOA
+#define GSM_RST_Pin GPIO_PIN_4
+#define GSM_RST_GPIO_Port GPIOA
 #define LED2_Pin GPIO_PIN_0
 #define LED2_GPIO_Port GPIOB
 #define LED1_Pin GPIO_PIN_2
 #define LED1_GPIO_Port GPIOB
+#define BAT_SCL_Pin GPIO_PIN_10
+#define BAT_SCL_GPIO_Port GPIOB
+#define BAT_SDA_Pin GPIO_PIN_11
+#define BAT_SDA_GPIO_Port GPIOB
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */
