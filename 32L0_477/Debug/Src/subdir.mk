@@ -6,6 +6,7 @@
 C_SRCS += \
 ../Src/Mesh.c \
 ../Src/RH_RF95.c \
+../Src/fuel_gauge.c \
 ../Src/main.c \
 ../Src/stm32l0xx_hal_msp.c \
 ../Src/stm32l0xx_it.c \
@@ -15,6 +16,7 @@ C_SRCS += \
 OBJS += \
 ./Src/Mesh.o \
 ./Src/RH_RF95.o \
+./Src/fuel_gauge.o \
 ./Src/main.o \
 ./Src/stm32l0xx_hal_msp.o \
 ./Src/stm32l0xx_it.o \
@@ -24,6 +26,7 @@ OBJS += \
 C_DEPS += \
 ./Src/Mesh.d \
 ./Src/RH_RF95.d \
+./Src/fuel_gauge.d \
 ./Src/main.d \
 ./Src/stm32l0xx_hal_msp.d \
 ./Src/stm32l0xx_it.d \

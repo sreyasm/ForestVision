@@ -1,4 +1,5 @@
-Src/main.o: ../Src/main.c D:/STM32/workspace/32L0_477/Inc/main.h \
+Src/fuel_gauge.o: ../Src/fuel_gauge.c \
+ D:/STM32/workspace/32L0_477/Inc/fuel_gauge.h \
  D:/STM32/workspace/32L0_477/Drivers/STM32L0xx_HAL_Driver/Inc/stm32l0xx_hal.h \
  D:/STM32/workspace/32L0_477/Inc/stm32l0xx_hal_conf.h \
  D:/STM32/workspace/32L0_477/Drivers/STM32L0xx_HAL_Driver/Inc/stm32l0xx_hal_rcc.h \
@@ -27,12 +28,9 @@ Src/main.o: ../Src/main.c D:/STM32/workspace/32L0_477/Inc/main.h \
  D:/STM32/workspace/32L0_477/Drivers/STM32L0xx_HAL_Driver/Inc/stm32l0xx_hal_tim.h \
  D:/STM32/workspace/32L0_477/Drivers/STM32L0xx_HAL_Driver/Inc/stm32l0xx_hal_tim_ex.h \
  D:/STM32/workspace/32L0_477/Drivers/STM32L0xx_HAL_Driver/Inc/stm32l0xx_hal_uart.h \
- D:/STM32/workspace/32L0_477/Drivers/STM32L0xx_HAL_Driver/Inc/stm32l0xx_hal_uart_ex.h \
- D:/STM32/workspace/32L0_477/Inc/mesh.h \
- D:/STM32/workspace/32L0_477/Inc/main.h \
- D:/STM32/workspace/32L0_477/Inc/fuel_gauge.h
+ D:/STM32/workspace/32L0_477/Drivers/STM32L0xx_HAL_Driver/Inc/stm32l0xx_hal_uart_ex.h
 
-D:/STM32/workspace/32L0_477/Inc/main.h:
+D:/STM32/workspace/32L0_477/Inc/fuel_gauge.h:
 
 D:/STM32/workspace/32L0_477/Drivers/STM32L0xx_HAL_Driver/Inc/stm32l0xx_hal.h:
 
@@ -91,9 +89,3 @@ D:/STM32/workspace/32L0_477/Drivers/STM32L0xx_HAL_Driver/Inc/stm32l0xx_hal_tim_e
 D:/STM32/workspace/32L0_477/Drivers/STM32L0xx_HAL_Driver/Inc/stm32l0xx_hal_uart.h:
 
 D:/STM32/workspace/32L0_477/Drivers/STM32L0xx_HAL_Driver/Inc/stm32l0xx_hal_uart_ex.h:
-
-D:/STM32/workspace/32L0_477/Inc/mesh.h:
-
-D:/STM32/workspace/32L0_477/Inc/main.h:
-
-D:/STM32/workspace/32L0_477/Inc/fuel_gauge.h:

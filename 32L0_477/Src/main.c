@@ -24,6 +24,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "mesh.h"
+#include "fuel_gauge.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -55,6 +56,8 @@ DMA_HandleTypeDef hdma_usart2_rx;
 
 /* USER CODE BEGIN PV */
 int first = 0;
+bool TIMEOUT_interrupt = false;
+bool LORA_interrupt = false;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -93,7 +96,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 		if(first == 0) {first = 1; return;}
 		HAL_GPIO_TogglePin(GPIOB,GPIO_PIN_4);
 		HAL_GPIO_TogglePin(LED1_GPIO_Port,LED1_Pin);
-		interrupt = TIMEOUT;
+		TIMEOUT_interrupt = true;
 
 		HAL_TIM_Base_Stop_IT(htim);
 	}
@@ -105,7 +108,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 	{
 		HAL_GPIO_TogglePin(GPIOA,GPIO_PIN_5);
 		HAL_GPIO_TogglePin(LED2_GPIO_Port,LED2_Pin);
-		interrupt = LORA_PACKET;
+		LORA_interrupt = true;
 	}
 }
 
@@ -183,56 +186,78 @@ int main(void)
 //	  HAL_GPIO_WritePin(LED1_GPIO_Port,LED1_Pin,GPIO_PIN_SET);
 //	  send(hspi2,GPIOB,"Timeout Successful");
 //  }
+  HAL_Delay(500);
+  if (self_ID == 3) { FG_I2C_Setup(&hi2c2); } //TODO: Fix for the future
   UART_send("New");
   self_ID = SELF_ID;
+  self_battery = 0;
   uint8_t data[256];
 
+  //Init
   Init_timeout();
   Init_RT();
   Print_RT();
 
+  //Set timer
   set_tim2(UPDATE_PERIOD);
   setModeRx(hspi2,GPIOB);
 
+  //Set interrupt;
+  LORA_interrupt = false;
+  TIMEOUT_interrupt = false;
+
   while(1)
   {
-	  do{asm("wfi");}while(interrupt == OTHERS);
+	  //wait for interrupt
+	  do{asm("wfi");}while(LORA_interrupt == false && TIMEOUT_interrupt == false);
 	  if(spiRead(hspi2,GPIOB,0x12) & 0x80 == 0x80) //rx_timeout
 		{
 		  //tell UART about the timeout
 		  UART_send("RX_Timeout\x0D\x0A");
-
-		  //clear the flag and restart
-		  spiWrite(hspi2,GPIOB,0x12,0xff);
-		  spiWrite(hspi2,GPIOB,0x12,0xff);
-
-		  //Reset
-		  setModeRx(hspi2,GPIOB);
+		  HAL_NVIC_SystemReset();
 		}
-	  if(interrupt == LORA_PACKET){
-		interrupt = OTHERS;
-		HAL_Delay(1000);
+
+	  if(LORA_interrupt == true){ //received a Lora Packet
+
+		//reset the interrupt
+		LORA_interrupt = false;
+
+		//wait to receive the whole packet (Read the status register until RX_Done is true)
+		uint32_t timer = HAL_GetTick();
+		while(spiRead(hspi2,GPIOB,0x12) != 80 && ( (HAL_GetTick()-timer) < 1000) ); //Timeout in 1 sec
+		if( (HAL_GetTick - timer) < 1000) {LORA_interrupt = false; continue;}
+
 		spiReadbuff(hspi2,GPIOB,data);
-		if(data[TYPE] == UPDATE_PACKET)
+		if(data[TYPE] == UPDATE_PACKET) //received an Update_Packet
 		{
 			Convert_Pkt_to_Table(data);
 			Update_timeout(sender_ID);
 			Update_Packet();
 			Print_RT();
+			print_timeout();
 		}
+
 		setModeRx(hspi2,GPIOB);
 	  }
-	  else if(interrupt == TIMEOUT)
+	  else if(TIMEOUT_interrupt == true)
 	  {
-		  interrupt = OTHERS;
+		  TIMEOUT_interrupt = false;
+		  Check_timeout(); //Check if there is any timeout
+
+		  //Read battery
+		  if(self_ID == 3) {self_battery = (uint8_t) FG_I2C_Read_SOC(&hi2c2);} //TODO: Fix in the future
+
+		  //Send Packet
 		  Convert_Table_to_Pkt(data);
 		  send(hspi2, GPIOB, data);
+
+		  //Reset stuff for interrupt
 		  setModeRx(hspi2,GPIOB);
 		  set_tim2(UPDATE_PERIOD);
+
 		  UART_send("Updated neighbors");
 	  }
   }
-  while(1);
 
   self_ID = get_ID(hspi2,GPIOB);
   //send self_ID to UART
@@ -249,31 +274,31 @@ int main(void)
 
   req_ACK_UUID = 0;
   resp_ACK_UUID = 0;
-  while(1)
-  {
+//  while(1)
+//  {
 //	  HAL_NVIC_ClearPendingIRQ(EXTI4_15_IRQn);
 //	  HAL_NVIC_EnableIRQ(EXTI4_15_IRQn);
-	  interrupt = OTHERS;
-	  setModeRx(hspi2,GPIOB);
-
-	  do{asm("wfi");}while(interrupt == OTHERS);
-	  HAL_Delay(1500);
-	  if(interrupt == LORA_PACKET){
-		interrupt = OTHERS;
-		spiReadbuff(hspi2,GPIOB,data);
-		if(data[TYPE] == RESP_ID || data[TYPE] == REQ_ID) {
-			resp_ID(hspi2, GPIOB,(uint8_t *)data);
-		}
-		if(data[TYPE] == REQ_ACK){
-			resp_ACK(hspi2,GPIOB,(uint8_t *)data);
-		}
-	  }
-	  else if(interrupt == TIMEOUT){
-		  interrupt = OTHERS;
-		  //send update to everyone
-		  //check for dead router
-	  }
-  }
+//	  interrupt = OTHERS;
+//	  setModeRx(hspi2,GPIOB);
+//
+//	  do{asm("wfi");}while(interrupt == OTHERS);
+//	  HAL_Delay(1500);
+//	  if(interrupt == LORA_PACKET){
+//		interrupt = OTHERS;
+//		spiReadbuff(hspi2,GPIOB,data);
+//		if(data[TYPE] == RESP_ID || data[TYPE] == REQ_ID) {
+//			resp_ID(hspi2, GPIOB,(uint8_t *)data);
+//		}
+//		if(data[TYPE] == REQ_ACK){
+//			resp_ACK(hspi2,GPIOB,(uint8_t *)data);
+//		}
+//	  }
+//	  else if(interrupt == TIMEOUT){
+//		  interrupt = OTHERS;
+//		  //send update to everyone
+//		  //check for dead router
+//	  }
+//  }
 
   send(hspi2,GPIOB,"SetRX");
 

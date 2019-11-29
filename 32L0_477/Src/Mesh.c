@@ -23,7 +23,7 @@ bool req_ID(SPI_HandleTypeDef hspi2, GPIO_TypeDef* cs, uint8_t dest_ID, uint8_t 
 	uint8_t data[256];
 
 	//Set the Interrupt
-	interrupt = OTHERS;
+//	interrupt = OTHERS;
 
 	//set the packet to sent out accordingly
 	//(REQ_IQ, destination_ID, packet_ID)
@@ -39,25 +39,25 @@ bool req_ID(SPI_HandleTypeDef hspi2, GPIO_TypeDef* cs, uint8_t dest_ID, uint8_t 
 	//Set timer to timeout (10 seconds)
 	set_tim2(10);
 
-	while(true){
-		interrupt = OTHERS;
-		setModeRx(hspi2,cs);
-		do{asm("wfi");}while(interrupt == OTHERS);
-		if(interrupt == TIMEOUT) //timeouts
-		{
-			return false;
-		}
-		else if(interrupt == LORA_PACKET)//got a response
-		{
-			//check type and destination
-			spiReadbuff(hspi2,cs,data);
-			if(data[TYPE] == RESP_ID && data[TRANS_ID] == dest_ID)
-			{
-				stop_tim2();
-				return true;
-			}
-		}
-	}
+//	while(true){
+//		interrupt = OTHERS;
+//		setModeRx(hspi2,cs);
+//		do{asm("wfi");}while(interrupt == OTHERS);
+//		if(interrupt == TIMEOUT) //timeouts
+//		{
+//			return false;
+//		}
+//		else if(interrupt == LORA_PACKET)//got a response
+//		{
+//			//check type and destination
+//			spiReadbuff(hspi2,cs,data);
+//			if(data[TYPE] == RESP_ID && data[TRANS_ID] == dest_ID)
+//			{
+//				stop_tim2();
+//				return true;
+//			}
+//		}
+//	}
 }
 
 //respond ID (receives req_ID and resp_ID)
@@ -114,25 +114,25 @@ bool req_ACK(SPI_HandleTypeDef hspi2, GPIO_TypeDef* cs, uint8_t dest_ID)
 	//Set timer to timeout (10 seconds)
 	set_tim2(5);
 
-	while(true){
-		interrupt = OTHERS;
-		setModeRx(hspi2,cs);
-		do{asm("wfi");}while(interrupt == OTHERS);
-		if(interrupt == TIMEOUT) //timeouts
-		{
-			return false;
-		}
-		else if(interrupt == LORA_PACKET)//got a response
-		{
-			//check type and destination
-			spiReadbuff(hspi2,cs,data);
-			if(data[TYPE] == RESP_ACK && data[ACK_REQ_ID] == self_ID && data[ACK_RESP_ID] == dest_ID)
-			{
-				stop_tim2();
-				return true;
-			}
-		}
-	}
+//	while(true){
+//		interrupt = OTHERS;
+//		setModeRx(hspi2,cs);
+//		do{asm("wfi");}while(interrupt == OTHERS);
+//		if(interrupt == TIMEOUT) //timeouts
+//		{
+//			return false;
+//		}
+//		else if(interrupt == LORA_PACKET)//got a response
+//		{
+//			//check type and destination
+//			spiReadbuff(hspi2,cs,data);
+//			if(data[TYPE] == RESP_ACK && data[ACK_REQ_ID] == self_ID && data[ACK_RESP_ID] == dest_ID)
+//			{
+//				stop_tim2();
+//				return true;
+//			}
+//		}
+//	}
 }
 
 //take in all "ACK type" packet and then output accordingly
@@ -168,16 +168,6 @@ void Init_timeout(){
 	}
 }
 
-void Fill_timeout(SPI_HandleTypeDef hspi2, GPIO_TypeDef* cs){
-	for(uint8_t i = 0; i < (self_ID-1); i++){
-		if(i+1 != self_ID)
-		{
-			if(req_ACK(hspi2,cs,i+1)){
-				Update_timeout(i+1);
-			}
-		}
-	}
-}
 void Update_timeout(uint8_t updated_node){
 	for(int i = 0; i < MAX_NODE; i++)
 	{
@@ -212,13 +202,16 @@ void Check_timeout(){
 			diff = crnt_time - timeout[i].timeout;
 			if(diff > TIMEOUT_PERIOD * 1000)
 			{
+				UART_send("Killed");
 				Delete_Router(timeout[i].router_ID);
 				Delete_timeout(timeout[i].router_ID);
+				Print_RT();
+				print_timeout();
 			}
 		}
 	}
 }
-void Delete_timeout(uint8_t node){
+void Delete_timeout(uint8_t node){ //kill the node
 	for(int i = 0; i < MAX_NODE; i++)
 	{
 		if(timeout[i].active == true && timeout[i].router_ID == node)
@@ -252,6 +245,7 @@ void Init_RT(){ //Init everything to all 1's
 		rt[i].next_hop	= 0;
 		rt[i].num_hop	= 0;
 		rt[i].signal	= 0;
+		rt[i].battery	= 0;
 		for(int j = 0; j < MAX_NODE; j++)
 		{
 			rt[i].route[j]	= 0;
@@ -261,20 +255,22 @@ void Init_RT(){ //Init everything to all 1's
 	rt[0].dest_ID = self_ID;
 	rt[0].active = 1;
 	rt[0].next_hop = self_ID;
+	rt[0].battery = self_battery;
 }
 void Convert_Table_to_Pkt(uint8_t* packet){ //packet should be min size 152 for max_node 10
 	packet[TYPE] 		= UPDATE_PACKET;
 	packet[SENDER_ID]	= self_ID;
 	for(int i = 0; i < MAX_NODE; i++)
 	{
-		packet[(i*15)+2] = rt[i].dest_ID != 0 ? rt[i].dest_ID : 0xFF;
-		packet[(i*15)+3] = rt[i].active != 0 ? rt[i].active : 0xFF;
-		packet[(i*15)+4] = rt[i].next_hop != 0 ? rt[i].next_hop : 0xFF;
-		packet[(i*15)+5] = rt[i].num_hop != 0 ? rt[i].num_hop : 0xFF;
-		packet[(i*15)+6] = rt[i].signal != 0 ? rt[i].signal : 0xFF;
+		packet[(i*16)+2] = rt[i].dest_ID != 0 ? rt[i].dest_ID : 0xFF;
+		packet[(i*16)+3] = rt[i].active != 0 ? rt[i].active : 0xFF;
+		packet[(i*16)+4] = rt[i].next_hop != 0 ? rt[i].next_hop : 0xFF;
+		packet[(i*16)+5] = rt[i].num_hop != 0 ? rt[i].num_hop : 0xFF;
+		packet[(i*16)+6] = rt[i].signal != 0 ? rt[i].signal : 0xFF;
+		packet[(i*16)+7] = rt[i].battery != 0 ? rt[i].battery : 0xFF;
 		for(int j = 0; j < MAX_NODE; j++)
 		{
-			packet[(i*15)+j+7] = rt[i].route[j] != 0 ? rt[i].route[j] : 0xFF;
+			packet[(i*16)+j+8] = rt[i].route[j] != 0 ? rt[i].route[j] : 0xFF;
 		}
 	}
 }
@@ -283,14 +279,15 @@ void Convert_Pkt_to_Table(uint8_t* packet){
 	sender_ID = packet[SENDER_ID];
 	for(int i = 0; i < MAX_NODE; i++)
 	{
-		recv_rt[i].dest_ID	= packet[(i*15)+2] != 0xFF ? packet[(i*15)+2] : 0;
-		recv_rt[i].active	= packet[(i*15)+3] != 0xFF ? packet[(i*15)+3] : 0;
-		recv_rt[i].next_hop	= packet[(i*15)+4] != 0xFF ? packet[(i*15)+4] : 0;
-		recv_rt[i].num_hop	= packet[(i*15)+5] != 0xFF ? packet[(i*15)+5] : 0;
-		recv_rt[i].signal	= packet[(i*15)+6] != 0xFF ? packet[(i*15)+6] : 0;
+		recv_rt[i].dest_ID	= packet[(i*16)+2] != 0xFF ? packet[(i*16)+2] : 0;
+		recv_rt[i].active	= packet[(i*16)+3] != 0xFF ? packet[(i*16)+3] : 0;
+		recv_rt[i].next_hop	= packet[(i*16)+4] != 0xFF ? packet[(i*16)+4] : 0;
+		recv_rt[i].num_hop	= packet[(i*16)+5] != 0xFF ? packet[(i*16)+5] : 0;
+		recv_rt[i].signal	= packet[(i*16)+6] != 0xFF ? packet[(i*16)+6] : 0;
+		recv_rt[i].battery  = packet[(i*16)+7] != 0xFF ? packet[(i*16)+7] : 0;
 		for(int j = 0; j < MAX_NODE; j++)
 		{
-			recv_rt[i].route[j]	= packet[(i*15)+j+7] != 0xFF ? packet[(i*15)+j+7] : 0;
+			recv_rt[i].route[j]	= packet[(i*16)+j+8] != 0xFF ? packet[(i*16)+j+8] : 0;
 		}
 	}
 }
@@ -301,8 +298,8 @@ void Print_RT(){
 		if(rt[i].active != 0)
 		{
 			uint8_t msg[256];
-			sprintf(msg,"ID: %d, Active: %d, Next_hop: %d, num_hop: %d, signal: %d", rt[i].dest_ID,
-					rt[i].active, rt[i].next_hop, rt[i].num_hop, rt[i].signal);
+			sprintf(msg,"ID: %d, Active: %d, Next_hop: %d, num_hop: %d, signal: %d, battery: %d", rt[i].dest_ID,
+					rt[i].active, rt[i].next_hop, rt[i].num_hop, rt[i].signal, rt[i].battery);
 			UART_send(msg);
 			sprintf(msg,"%d -> %d -> %d -> %d -> %d -> %d -> %d -> %d -> %d -> %d",
 					rt[i].route[0],rt[i].route[1],rt[i].route[2],rt[i].route[3],rt[i].route[4],
@@ -325,7 +322,16 @@ void Print_RT(){
 	}
 }
 
-void Update_Packet(){ //Ensure that recv_packet is updated using Convert_Pkt_to_Table
+void Update_Packet(){ //Ensure that recv_packet is updated using Convert_Pkt_to_Table (index i for recv_rt and j for rt)
+	//update myself
+	for(int j = 0; j < MAX_NODE; j++)
+	{
+		if(rt[j].active == 1 && rt[j].dest_ID == self_ID)
+		{
+			rt[j].battery = self_battery;
+			break;
+		}
+	}
 	//update the sender to the routing table first
 	bool sender_in_rt = false;
 	for(int i = 0; i < MAX_NODE; i++)
@@ -340,6 +346,7 @@ void Update_Packet(){ //Ensure that recv_packet is updated using Convert_Pkt_to_
 					rt[j].next_hop = sender_ID;
 					rt[j].num_hop = 1;
 					rt[j].signal = recv_rt[i].signal;
+					rt[j].battery = recv_rt[i].battery;
 					rt[j].route[0] = self_ID; rt[j].route[1] = recv_rt[i].dest_ID; rt[j].route[2] = 0;
 				}
 			}
@@ -355,6 +362,7 @@ void Update_Packet(){ //Ensure that recv_packet is updated using Convert_Pkt_to_
 						rt[j].next_hop = sender_ID;
 						rt[j].num_hop = 1;
 						rt[j].signal = recv_rt[i].signal;
+						rt[j].battery = recv_rt[i].battery;
 						rt[j].route[0] = self_ID; rt[j].route[1] = recv_rt[i].dest_ID; rt[j].route[2] = 0;
 						break;
 					}
@@ -368,7 +376,7 @@ void Update_Packet(){ //Ensure that recv_packet is updated using Convert_Pkt_to_
 	{
 		if(recv_rt[i].active == 1 && recv_rt[i].dest_ID != sender_ID){ //the crnt route is valid
 
-			bool in_rt = false;
+			bool in_rt = false; //check if ID is alr in routing table
 			for(int j = 0; j < MAX_NODE; j++) //go through the routing table for the spot
 			{
 				if(rt[j].active == 1 && rt[j].dest_ID == recv_rt[i].dest_ID) //found in the own routing table
@@ -376,14 +384,17 @@ void Update_Packet(){ //Ensure that recv_packet is updated using Convert_Pkt_to_
 					in_rt = true;
 
 					//check if self is in path
+					bool in_path = false;
 					for(int k = 0; k < MAX_NODE; k++){
-						if(recv_rt[i].route[k] == self_ID) {break;}
+						if(recv_rt[i].route[k] == self_ID) {in_path=true;break;}
 					}
 
-					//check for force update || lower cost
-					if(rt[j].next_hop == sender_ID || rt[j].num_hop > (recv_rt[i].num_hop + 1) ){
+					//in_path == false && (check for force update || lower cost)
+					if(in_path == false && (rt[j].next_hop == sender_ID || rt[j].num_hop > (recv_rt[i].num_hop + 1)) ){
 						rt[j].next_hop = sender_ID;
 						rt[j].num_hop = recv_rt[i].num_hop + 1;
+						rt[j].signal = recv_rt[i].signal;
+						rt[j].battery = recv_rt[i].battery;
 						rt[j].route[0] = self_ID;
 						for(int k = 0; k < (MAX_NODE - 1); k++){
 							rt[j].route[k+1] = recv_rt[i].route[k];
@@ -394,25 +405,62 @@ void Update_Packet(){ //Ensure that recv_packet is updated using Convert_Pkt_to_
 				}
 			}
 
-			if(in_rt == false) // fail to find in rt
+			if(in_rt == false) // fail to find ID in rt
 			{
-				for(int j = 0; j < MAX_NODE; j++)
+				//check if self is in path
+				bool in_path = false;
+				for(int k = 0; k < MAX_NODE; k++){
+					if(recv_rt[i].route[k] == self_ID) {in_path=true;break;}
+				}
+
+				if(in_path == false) //if not in path, add to rt
 				{
-					if(rt[j].active != 1){
-						rt[j].dest_ID = recv_rt[i].dest_ID;
-						rt[j].active = 1;
-						rt[j].next_hop = sender_ID;
-						rt[j].num_hop = recv_rt[i].num_hop + 1;
-						rt[j].signal = recv_rt[i].signal;
-						rt[j].route[0] = self_ID;
-						for(int k = 0; k < (MAX_NODE-1); k++){
-							rt[j].route[k+1] = recv_rt[i].route[k];
+					for(int j = 0; j < MAX_NODE; j++)
+					{
+						if(rt[j].active != 1){
+							rt[j].dest_ID = recv_rt[i].dest_ID;
+							rt[j].active = 1;
+							rt[j].next_hop = sender_ID;
+							rt[j].num_hop = recv_rt[i].num_hop + 1;
+							rt[j].signal = recv_rt[i].signal;
+							rt[j].battery = recv_rt[i].battery;
+							rt[j].route[0] = self_ID;
+							for(int k = 0; k < (MAX_NODE-1); k++){
+								rt[j].route[k+1] = recv_rt[i].route[k];
+							}
+							break;
 						}
-						break;
 					}
 				}
 			}
 
+		}
+	}
+
+	//After updating table, check that all route using this node is still active, else kill it
+	//E.g
+	// 1 -> 3 && 1 -> 3 -> 2
+	// If 3 doesnt have 3 -> 2, kill 1 -> 3 -> 2
+	for(int j = 0 ; j < MAX_NODE; j++)
+	{
+		//route is active && sender_ID is next_hop
+		if(rt[j].active == 1 && rt[j].next_hop == sender_ID){
+
+			bool found_in_recv_rt = false;
+			for(int i = 0; i <MAX_NODE; i++){
+				//found in recv_rt and is well and active
+				if(recv_rt[i].dest_ID == rt[j].dest_ID && recv_rt[i].active)
+				{
+					found_in_recv_rt = true;
+					break;
+				}
+			}
+
+			//delete route if can't find in recv_rt
+			if(found_in_recv_rt == false)
+			{
+				Delete_Router(rt[j].dest_ID);
+			}
 		}
 	}
 }
@@ -430,6 +478,7 @@ void Delete_Router(uint8_t router)
 				rt[i].next_hop = 0;
 				rt[i].num_hop = 0;
 				rt[i].signal = 0;
+				rt[i].battery = 0;
 				for(int j = 0; j < MAX_NODE; j++){
 					rt[i].route[j] = 0;
 				}
@@ -450,6 +499,7 @@ void Delete_Router(uint8_t router)
 					rt[i].next_hop = 0;
 					rt[i].num_hop = 0;
 					rt[i].signal = 0;
+					rt[i].battery = 0;
 					for(int j = 0; j < MAX_NODE; j++){
 						rt[i].route[j] = 0;
 					}

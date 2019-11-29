@@ -29,11 +29,10 @@ extern "C" {
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32l0xx_hal.h"
-#include <stdbool.h>
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include <stdbool.h>
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
@@ -61,7 +60,7 @@ void UART_send(uint8_t *);
 
 
 #define MAX_NODE 10
-#define SELF_ID 1
+#define SELF_ID 3
 #define UPDATE_PERIOD 10 //sec
 #define TIMEOUT_PERIOD 30 //sec
 struct timeout_arr{
@@ -77,14 +76,16 @@ struct routing_table{
 	uint8_t next_hop;
 	uint8_t num_hop;
 	uint8_t signal;
+	uint8_t battery;
 	uint8_t route[MAX_NODE];
 };
 struct routing_table rt[MAX_NODE];
 struct routing_table recv_rt[MAX_NODE];
 uint8_t sender_ID;
 
-int interrupt;
 uint8_t self_ID;
+uint8_t self_battery;
+
 uint8_t req_ACK_UUID;
 uint8_t resp_ACK_UUID;
 

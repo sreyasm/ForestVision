@@ -46,7 +46,6 @@ void resp_ACK(SPI_HandleTypeDef, GPIO_TypeDef*,uint8_t *);
 
 //Functions for Timeout Table
 void Init_timeout();
-void Fill_timeout(SPI_HandleTypeDef, GPIO_TypeDef*);
 void Update_timeout(uint8_t);
 void Check_timeout();
 void Delete_timeout(uint8_t);
