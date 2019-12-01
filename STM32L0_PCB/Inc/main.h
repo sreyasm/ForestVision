@@ -32,6 +32,7 @@ extern "C" {
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include <stdbool.h>
 #include "G350.h"
 #include "fuel_gauge.h"
 #include "text_update.h"
@@ -56,6 +57,41 @@ extern "C" {
 void Error_Handler(void);
 
 /* USER CODE BEGIN EFP */
+void set_tim2(int);
+void stop_tim2();
+void UART_send(uint8_t *);
+
+
+#define MAX_NODE 10
+#define SELF_ID 3
+#define UPDATE_PERIOD 10 //sec
+#define TIMEOUT_PERIOD 30 //sec
+struct timeout_arr{
+    uint8_t router_ID;
+    uint32_t timeout;
+    bool active;
+};
+struct timeout_arr timeout[MAX_NODE];
+
+struct routing_table{
+    uint8_t dest_ID;
+    uint8_t active;
+    uint8_t next_hop;
+    uint8_t num_hop;
+    uint8_t signal;
+    uint8_t battery;
+    uint8_t fire;
+    uint8_t route[MAX_NODE];
+};
+struct routing_table rt[MAX_NODE];
+struct routing_table recv_rt[MAX_NODE];
+uint8_t sender_ID;
+
+uint8_t self_ID;
+uint8_t self_battery;
+
+uint8_t req_ACK_UUID;
+uint8_t resp_ACK_UUID;
 
 /* USER CODE END EFP */
 
@@ -66,6 +102,8 @@ void Error_Handler(void);
 #define GSM_RX_GPIO_Port GPIOA
 #define GSM_RST_Pin GPIO_PIN_4
 #define GSM_RST_GPIO_Port GPIOA
+#define DEVLED_R_Pin GPIO_PIN_5
+#define DEVLED_R_GPIO_Port GPIOA
 #define LED2_Pin GPIO_PIN_0
 #define LED2_GPIO_Port GPIOB
 #define LED1_Pin GPIO_PIN_2
@@ -74,6 +112,31 @@ void Error_Handler(void);
 #define BAT_SCL_GPIO_Port GPIOB
 #define BAT_SDA_Pin GPIO_PIN_11
 #define BAT_SDA_GPIO_Port GPIOB
+#define LORA_NSS_Pin GPIO_PIN_12
+#define LORA_NSS_GPIO_Port GPIOB
+#define LORA_SCK_Pin GPIO_PIN_13
+#define LORA_SCK_GPIO_Port GPIOB
+#define LORA_MISO_Pin GPIO_PIN_14
+#define LORA_MISO_GPIO_Port GPIOB
+#define LORA_MOSI_Pin GPIO_PIN_15
+#define LORA_MOSI_GPIO_Port GPIOB
+#define LORA_INT_Pin GPIO_PIN_8
+#define LORA_INT_GPIO_Port GPIOA
+#define LORA_INT_EXTI_IRQn EXTI4_15_IRQn
+#define LORA_EN_Pin GPIO_PIN_9
+#define LORA_EN_GPIO_Port GPIOA
+#define LORA_RST_Pin GPIO_PIN_10
+#define LORA_RST_GPIO_Port GPIOA
+#define SWDIO_Pin GPIO_PIN_13
+#define SWDIO_GPIO_Port GPIOA
+#define SWCLK_Pin GPIO_PIN_14
+#define SWCLK_GPIO_Port GPIOA
+#define DEVLED_G_Pin GPIO_PIN_4
+#define DEVLED_G_GPIO_Port GPIOB
+#define L0_TX_Pin GPIO_PIN_6
+#define L0_TX_GPIO_Port GPIOB
+#define L0_RX_Pin GPIO_PIN_7
+#define L0_RX_GPIO_Port GPIOB
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */

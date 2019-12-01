@@ -106,14 +106,42 @@ int main(void)
 
   HAL_Delay(5000);
 
-  if (text_update(&huart2, &hi2c2, 1, 1, 0))
+  // If initialization succeeds
+  if (GSM_Init(&huart2) == 1)
   {
-      while(1)
+      // Turn on red LED
+      HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, GPIO_PIN_SET);
+
+      // If signal is non-zero
+      if (GSM_Check_Signal(&huart2))
       {
-          HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, GPIO_PIN_SET);
-          HAL_Delay(500);
-          HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, GPIO_PIN_RESET);
-          HAL_Delay(500);
+          if (text_update(&huart2, "+17657017922")) // <-- DON'T FORGET TO CHANGE THIS PHONE NUMBER
+          {
+              // Blink the green LED
+              while(1)
+              {
+                  HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, GPIO_PIN_SET);
+                  HAL_Delay(500);
+                  HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, GPIO_PIN_RESET);
+                  HAL_Delay(500);
+              }
+          }
+          else
+          {
+              // Turn on green LED
+              HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, GPIO_PIN_SET);
+          }
+      }
+      else
+      {
+          // Blink the red LED
+          while(1)
+          {
+              HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, GPIO_PIN_SET);
+              HAL_Delay(500);
+              HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, GPIO_PIN_RESET);
+              HAL_Delay(500);
+          }
       }
   }
 

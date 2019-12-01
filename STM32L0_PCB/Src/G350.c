@@ -25,75 +25,75 @@ int GSM_Init(UART_HandleTypeDef * huart)
         return 0;
     }
 
-    if (Attempt_GSM_UART_Transmit_Wait(huart, "AT+CGMI", 1, 200) != 1)
+    /*if (Attempt_GSM_UART_Transmit_Wait(huart, "AT+CGMI", 1, 200) != 1)
     {
         return 0;
-    }
+    }*/
 
-    if (Attempt_GSM_UART_Transmit_Wait(huart, "AT+CGMM", 1, 200) != 1)
+    /*if (Attempt_GSM_UART_Transmit_Wait(huart, "AT+CGMM", 1, 200) != 1)
     {
         return 0;
-    }
+    }*/
 
-    if (Attempt_GSM_UART_Transmit_Wait(huart, "AT+CGMR", 1, 200) != 1)
+    /*if (Attempt_GSM_UART_Transmit_Wait(huart, "AT+CGMR", 1, 200) != 1)
     {
         return 0;
-    }
+    }*/
 
-    if (Attempt_GSM_UART_Transmit_Wait(huart, "ATI9", 1, 200) != 1)
+    /*if (Attempt_GSM_UART_Transmit_Wait(huart, "ATI9", 1, 200) != 1)
     {
         return 0;
-    }
+    }*/
 
     if (Attempt_GSM_UART_Transmit_Wait(huart, "AT+CLCK=\"SC\",2", 1, 200) != 1)
     {
         return 0;
     }
 
-    if (Attempt_GSM_UART_Transmit_Wait(huart, "AT+CPIN?", 1, 200) != 1)
+    /*if (Attempt_GSM_UART_Transmit_Wait(huart, "AT+CPIN?", 1, 200) != 1)
     {
         return 0;
-    }
+    }*/
 
-    if (Attempt_GSM_UART_Transmit_Wait(huart, "AT+UPSV?", 1, 200) != 1)
+    /*if (Attempt_GSM_UART_Transmit_Wait(huart, "AT+UPSV?", 1, 200) != 1)
     {
         return 0;
-    }
+    }*/
 
-    if (Attempt_GSM_UART_Transmit_Wait(huart, "AT+CCLK?", 1, 200) != 1)
+    /*if (Attempt_GSM_UART_Transmit_Wait(huart, "AT+CCLK?", 1, 200) != 1)
     {
         return 0;
-    }
+    }*/
 
-    if (Attempt_GSM_UART_Transmit_Wait(huart, "AT+CGSN", 1, 200) != 1)
+    /*if (Attempt_GSM_UART_Transmit_Wait(huart, "AT+CGSN", 1, 200) != 1)
     {
         return 0;
-    }
+    }*/
 
-    if (Attempt_GSM_UART_Transmit_Wait(huart, "AT+COPS?", 1, 200) != 1)
+    /*if (Attempt_GSM_UART_Transmit_Wait(huart, "AT+COPS?", 1, 200) != 1)
     {
         return 0;
-    }
+    }*/
 
     if (Attempt_GSM_UART_Transmit_Wait(huart, "AT+CREG=2", 1, 200) != 1)
     {
         return 0;
     }
 
-    if (Attempt_GSM_UART_Transmit_Wait(huart, "AT+CREG?", 1, 200) != 1)
+    /*if (Attempt_GSM_UART_Transmit_Wait(huart, "AT+CREG?", 1, 200) != 1)
     {
         return 0;
-    }
+    }*/
 
     if (Attempt_GSM_UART_Transmit_Wait(huart, "AT+CREG=0", 1, 200) != 1)
     {
         return 0;
     }
 
-    if (Attempt_GSM_UART_Transmit_Wait(huart, "AT+CSQ", 1, 200) != 1)
+    /*if (Attempt_GSM_UART_Transmit_Wait(huart, "AT+CSQ", 1, 200) != 1)
     {
         return 0;
-    }
+    }*/
 
     return 1;
 }
@@ -118,6 +118,98 @@ int Attempt_GSM_UART_Transmit_Wait(UART_HandleTypeDef * huart, char * command, i
     return 0;
 }
 
+// Function that reads CSQ (which is the code for signal strength) of the GSM module
+int GSM_Check_Signal(UART_HandleTypeDef * huart)
+{
+    // Initialize buffer to send to GSM via UART
+    char full_command[GSM_TX_BUFFER_SIZE] = "AT+CSQ\x0D";
+
+    // Attempt to send the command 5 times in the case that the first few attempts fail
+    for (int i = 0; i < 5; i++)
+    {
+        // Initialize the buffer to hold the reply from GSM
+        char aRxBuffer[GSM_RX_BUFFER_SIZE] = "";
+
+        HAL_StatusTypeDef stat; // Status variable to ensure HAL functions work correctly
+
+        // Set the DMA to receive the reply from GSM
+        stat = HAL_UART_Receive_DMA(huart, (uint8_t *) aRxBuffer, GSM_RX_BUFFER_SIZE);
+        if (stat != HAL_OK)
+        {
+            return 0;
+        }
+
+        // Transmit the message to GSM via UART
+        stat = HAL_UART_Transmit(huart, (uint8_t *) full_command, (uint16_t) strlen(full_command), GSM_TX_TIMEOUT);
+        if (stat != HAL_OK)
+        {
+            return 0;
+        }
+
+        uint32_t tickstart = HAL_GetTick();
+
+        while ((aRxBuffer[0] == 0) && ((HAL_GetTick() - tickstart) < 1000));
+
+        // Wait 0.2 seconds for the rest of the buffer to fill
+        HAL_Delay(200);
+
+        // Stop the DMA request
+        HAL_UART_DMAStop(huart);
+
+        // Check for the presence of the 'OK' string in the buffer
+        // If yes, continue to parse the RX buffer
+        if (OK_PRESENCE(aRxBuffer))
+        {
+            // Grab the "Signal strength" reply from the GSM
+            int left = 0;
+            while (aRxBuffer[left] != ':')
+            {
+                left++;
+            }
+
+            left += 2;
+            int right = left + 1;
+
+            while (aRxBuffer[right] != ',')
+            {
+                right++;
+            }
+
+            // If the signal strength is a single digit
+            if (left == (right - 1))
+            {
+                int signal_strength = aRxBuffer[left] - '0';
+                return signal_strength;
+            }
+
+            // Else if the signal strength has 2 digits
+            else if (left == (right - 2))
+            {
+                int digit_1 = aRxBuffer[left] - '0';
+                int digit_2 = aRxBuffer[left+1] - '0';
+                int signal_strength = (digit_1 * 10) + digit_2;
+
+                // Signal strength of 99 effectively means there's no signal (according to Luke)
+                if (signal_strength == 99)
+                {
+                    return 0;
+                }
+                else
+                {
+                    return signal_strength;
+                }
+            }
+            else // Signal strength is >2 digits. Should not occur whatsoever
+            {
+                return 0;
+            }
+        }
+    }
+
+    // If program reaches this point, GSM never seems to reply with 'OK'. Therefore, terminate.
+    return 0;
+}
+
 // This function transmits a single AT command with a wait_duration parameter.
 // The wait_duration parameter tells the function how much time to wait (in milliseconds)
 // before stopping the DMA to read the buffer. Too short of a wait period would not
@@ -128,31 +220,30 @@ int Attempt_GSM_UART_Transmit_Wait(UART_HandleTypeDef * huart, char * command, i
 int GSM_UART_Transmit_Wait(UART_HandleTypeDef * huart, char * command, int ok_check, int wait_duration)
 {
     // Initialize buffer to send to GSM via UART
-    char full_command[GSM_SEND_BUFFER_SIZE] = "";
+    char full_command[GSM_TX_BUFFER_SIZE] = "";
     strcpy(full_command, command); // Copy message into buffer
     strcat(full_command, "\x0D"); // Append CR to string (0xD)
 
     // Initialize the buffer to hold the reply from GSM
-    char aRxBuffer[50] = "";
+    char aRxBuffer[GSM_RX_BUFFER_SIZE] = "";
 
     HAL_StatusTypeDef stat; // Status variable to ensure HAL functions work correctly
 
     // Set the DMA to receive the reply from GSM
-    stat = HAL_UART_Receive_DMA(huart, (uint8_t *) aRxBuffer, 50);
+    stat = HAL_UART_Receive_DMA(huart, (uint8_t *) aRxBuffer, GSM_RX_BUFFER_SIZE);
     if (stat != HAL_OK)
     {
         return 0;
     }
 
     // Transmit the message to GSM via UART
-    stat = HAL_UART_Transmit(huart, (uint8_t *) full_command, (uint16_t) strlen(full_command), 30);
+    stat = HAL_UART_Transmit(huart, (uint8_t *) full_command, (uint16_t) strlen(full_command), GSM_TX_TIMEOUT);
     if (stat != HAL_OK)
     {
         return 0;
     }
 
     uint32_t tickstart = HAL_GetTick();
-
     while ((aRxBuffer[0] == 0) && ((HAL_GetTick() - tickstart) < 1000));
 
     // Wait the specified amount of duration (in milliseconds).
@@ -198,15 +289,15 @@ int OK_PRESENCE(char * buffer)
 // Also, make sure phone_number has a "+1" at the front. Otherwise, it will fail.
 int GSM_Send_Text(UART_HandleTypeDef * huart, char * phone_number, char * message)
 {
-    if (Attempt_GSM_UART_Transmit_Wait(huart, "AT+CSCA?", 1, 200) != 1)
+    /*if (Attempt_GSM_UART_Transmit_Wait(huart, "AT+CSCA?", 1, 200) != 1)
     {
         return 0;
-    }
+    }*/
 
-    if (Attempt_GSM_UART_Transmit_Wait(huart, "AT+CNMI?", 1, 200) != 1)
+    /*if (Attempt_GSM_UART_Transmit_Wait(huart, "AT+CNMI?", 1, 200) != 1)
     {
         return 0;
-    }
+    }*/
 
     if (Attempt_GSM_UART_Transmit_Wait(huart, "AT+CMGF=1", 1, 200) != 1)
     {
@@ -223,12 +314,8 @@ int GSM_Send_Text(UART_HandleTypeDef * huart, char * phone_number, char * messag
 
 int Attempt_GSM_UART_Transmit_Msg(UART_HandleTypeDef * huart, char * phone_number, char * message)
 {
-    // Get string length + 10, since we need to prepend the proper
-    // AT command to the buffer before transmitting it to the GSM
-    //int command_length = ((int) strlen(phone_number)) + 10;
-
     // Initialize buffer to send to GSM via UART
-    char full_command[GSM_SEND_BUFFER_SIZE] = "";
+    char full_command[GSM_TX_BUFFER_SIZE] = "";
     strcpy(full_command, "AT+CMGS=\"");
     strcat(full_command, phone_number);
     strcat(full_command, "\"");
@@ -237,7 +324,7 @@ int Attempt_GSM_UART_Transmit_Msg(UART_HandleTypeDef * huart, char * phone_numbe
     // full_command = AT+CMGS="phone_number"
 
     // Make 5 attempts at sending a text message
-    for (int i = 0; i < 5; i++)
+    /*for (int i = 0; i < 5; i++)
     {
         // Command to send a text message
         if (Attempt_GSM_UART_Transmit_Wait(huart, full_command, 0, 200) != 1)
@@ -245,11 +332,23 @@ int Attempt_GSM_UART_Transmit_Msg(UART_HandleTypeDef * huart, char * phone_numbe
             return 0;
         }
 
-        // Transmit the actual message contents of the SMS to be sent
+        // Transmit the actual message contents of the SMS
         if (GSM_UART_Transmit_Msg(huart, message, 1) == 1)
         {
             return 1;
         }
+    }*/
+
+    // Command to send a text message
+    if (Attempt_GSM_UART_Transmit_Wait(huart, full_command, 0, 200) != 1)
+    {
+        return 0;
+    }
+
+    // Transmit the actual message contents of the SMS
+    if (GSM_UART_Transmit_Msg(huart, message, 1) == 1)
+    {
+        return 1;
     }
 
     return 0;
@@ -265,7 +364,7 @@ int Attempt_GSM_UART_Transmit_Msg(UART_HandleTypeDef * huart, char * phone_numbe
 //        and go to page 228, under '11.15 Send message +CMGS', read the 11.15.1 Description.
 int GSM_UART_Transmit_Msg(UART_HandleTypeDef * huart, char * message, int ok_check)
 {
-    char full_command[GSM_SEND_BUFFER_SIZE] = ""; // Initialize buffer to send to GSM via UART
+    char full_command[GSM_MSG_BUFFER_SIZE] = ""; // Initialize buffer to send to GSM via UART
     strcpy(full_command, message); // Copy message into buffer
 
     // Append <Ctrl-Z> (0x1A) and CR to string (0xD).
@@ -274,19 +373,19 @@ int GSM_UART_Transmit_Msg(UART_HandleTypeDef * huart, char * message, int ok_che
     strcat(full_command, "\x1A\x0D");
 
     // Initialize the buffer to hold the reply from GSM
-    char aRxBuffer[50] = "";
+    char aRxBuffer[GSM_RX_BUFFER_SIZE] = "";
 
     HAL_StatusTypeDef stat; // Status variable to ensure HAL functions work correctly
 
     // Set the DMA to receive the reply from GSM
-    stat = HAL_UART_Receive_DMA(huart, (uint8_t *) aRxBuffer, 50);
+    stat = HAL_UART_Receive_DMA(huart, (uint8_t *) aRxBuffer, GSM_RX_BUFFER_SIZE);
     if (stat != HAL_OK)
     {
         return 0;
     }
 
     // Transmit the message to GSM via UART
-    stat = HAL_UART_Transmit(huart, (uint8_t *) full_command, (uint16_t) strlen(full_command), 30);
+    stat = HAL_UART_Transmit(huart, (uint8_t *) full_command, (uint16_t) strlen(full_command), GSM_TX_TIMEOUT);
     if (stat != HAL_OK)
     {
         return 0;
@@ -294,7 +393,9 @@ int GSM_UART_Transmit_Msg(UART_HandleTypeDef * huart, char * message, int ok_che
 
     // Wait until the first character in the buffer is updated
     // Once it does, this means that the reply is coming in.
-    while(aRxBuffer[0] == 0);
+    // Set timeout for ~7 seconds
+    uint32_t tickstart = HAL_GetTick();
+    while ((aRxBuffer[0] == 0) && ((HAL_GetTick() - tickstart) < 7000));
 
     // Wait 0.2 seconds for the rest of the buffer to fill up
     HAL_Delay(200);

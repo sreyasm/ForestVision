@@ -1,100 +1,80 @@
 #include "text_update.h"
 
-int text_update(UART_HandleTypeDef * huart, I2C_HandleTypeDef * hi2c, int cameraID, int is_alive, int is_fire)
+// This code has access to the routing table (a.k.a rt)
+int text_update(UART_HandleTypeDef * huart, char * phone_number)
 {
-    // Read the battery percentage from the fuel gauge
-    uint16_t bat_percent = FG_I2C_Read_SOC(hi2c);
+    char full_msg[GSM_MSG_BUFFER_SIZE] = "";
+    int idx = 0;
 
-    if (bat_percent)
+    for (int i = 0; i < MAX_NODE; i++)
     {
-        asm("nop");
-    }
-
-    char full_msg[GSM_SEND_BUFFER_SIZE] = "";
-
-    int i = 0;
-
-    if (cameraID < 10)
-    {
-        full_msg[i++] = cameraID + '0';
-    }
-    else
-    {
-        int id_dig1 = cameraID / 10;
-        int id_dig2 = cameraID % 10;
-        full_msg[i++] = id_dig1 + '0';
-        full_msg[i++] = id_dig2 + '0';
-    }
-
-    full_msg[i++] = ',';
-    full_msg[i++] = ' ';
-
-    if (is_alive)
-    {
-        full_msg[i++] = 'A';
-        full_msg[i++] = 'l';
-        full_msg[i++] = 'i';
-        full_msg[i++] = 'v';
-        full_msg[i++] = 'e';
-    }
-    else
-    {
-        full_msg[i++] = 'D';
-        full_msg[i++] = 'e';
-        full_msg[i++] = 'a';
-        full_msg[i++] = 'd';
-    }
-
-    full_msg[i++] = ',';
-    full_msg[i++] = ' ';
-
-    if (is_fire)
-    {
-        full_msg[i++] = 'F';
-        full_msg[i++] = 'I';
-        full_msg[i++] = 'R';
-        full_msg[i++] = 'E';
-    }
-    else
-    {
-        full_msg[i++] = 'N';
-        full_msg[i++] = 'o';
-        full_msg[i++] = 'n';
-        full_msg[i++] = 'e';
-    }
-
-    full_msg[i++] = ',';
-    full_msg[i++] = ' ';
-
-    if (bat_percent < 10) // Battery percentage is 1 digit
-    {
-        full_msg[i++] = bat_percent + '0';
-        full_msg[i++] = '\0';
-    }
-    else if (bat_percent < 100) // Battery percentage is 2 digits
-    {
-        uint16_t dig1 = bat_percent / 10;
-        uint16_t dig2 = bat_percent % 10;
-
-        full_msg[i++] = dig1 + '0';
-        full_msg[i++] = dig2 + '0';
-        full_msg[i++] = '\0';
-    }
-    else // Battery is at 100%
-    {
-        full_msg[i++] = '1';
-        full_msg[i++] = '0';
-        full_msg[i++] = '0';
-        full_msg[i++] = '\0';
-    }
-
-    if (GSM_Init(huart) == 1)
-    {
-        int i = GSM_Send_Text(huart, "+12067346538", full_msg);
-        if (i)
+        if (rt[i].active == 1)
         {
-            return 1;
+            if (idx != 0)
+            {
+                full_msg[idx++] = '.';
+                full_msg[idx++] = ' ';
+            }
+
+            if (rt[i].dest_ID < 10)
+            {
+                full_msg[idx++] = rt[i].dest_ID + '0';
+            }
+            else
+            {
+                int id_dig1 = rt[i].dest_ID / 10;
+                int id_dig2 = rt[i].dest_ID % 10;
+                full_msg[idx++] = id_dig1 + '0';
+                full_msg[idx++] = id_dig2 + '0';
+            }
+
+            full_msg[idx++] = ',';
+            full_msg[idx++] = ' ';
+
+            if (rt[i].fire == 1)
+            {
+                full_msg[idx++] = 'F';
+                full_msg[idx++] = 'I';
+                full_msg[idx++] = 'R';
+                full_msg[idx++] = 'E';
+            }
+            else
+            {
+                full_msg[idx++] = 'C';
+                full_msg[idx++] = 'l';
+                full_msg[idx++] = 'e';
+                full_msg[idx++] = 'a';
+                full_msg[idx++] = 'r';
+            }
+
+            full_msg[idx++] = ',';
+            full_msg[idx++] = ' ';
+
+            if (rt[i].battery < 10)
+            {
+                full_msg[idx++] = rt[i].battery + '0';
+            }
+            else if (rt[i].battery < 100)
+            {
+                uint16_t bat_dig1 = rt[i].battery / 10;
+                uint16_t bat_dig2 = rt[i].battery % 10;
+                full_msg[idx++] = bat_dig1 + '0';
+                full_msg[idx++] = bat_dig2 + '0';
+            }
+            else // Battery percentage is at 100%
+            {
+                full_msg[idx++] = '1';
+                full_msg[idx++] = '0';
+                full_msg[idx++] = '0';
+            }
         }
+    }
+
+    full_msg[idx++] = '\0';
+
+    if (GSM_Send_Text(huart, phone_number, full_msg) == 1)
+    {
+        return 1;
     }
 
     return 0;
