@@ -25,75 +25,20 @@ int GSM_Init(UART_HandleTypeDef * huart)
         return 0;
     }
 
-    /*if (Attempt_GSM_UART_Transmit_Wait(huart, "AT+CGMI", 1, 200) != 1)
-    {
-        return 0;
-    }*/
-
-    /*if (Attempt_GSM_UART_Transmit_Wait(huart, "AT+CGMM", 1, 200) != 1)
-    {
-        return 0;
-    }*/
-
-    /*if (Attempt_GSM_UART_Transmit_Wait(huart, "AT+CGMR", 1, 200) != 1)
-    {
-        return 0;
-    }*/
-
-    /*if (Attempt_GSM_UART_Transmit_Wait(huart, "ATI9", 1, 200) != 1)
-    {
-        return 0;
-    }*/
-
     if (Attempt_GSM_UART_Transmit_Wait(huart, "AT+CLCK=\"SC\",2", 1, 200) != 1)
     {
         return 0;
     }
-
-    /*if (Attempt_GSM_UART_Transmit_Wait(huart, "AT+CPIN?", 1, 200) != 1)
-    {
-        return 0;
-    }*/
-
-    /*if (Attempt_GSM_UART_Transmit_Wait(huart, "AT+UPSV?", 1, 200) != 1)
-    {
-        return 0;
-    }*/
-
-    /*if (Attempt_GSM_UART_Transmit_Wait(huart, "AT+CCLK?", 1, 200) != 1)
-    {
-        return 0;
-    }*/
-
-    /*if (Attempt_GSM_UART_Transmit_Wait(huart, "AT+CGSN", 1, 200) != 1)
-    {
-        return 0;
-    }*/
-
-    /*if (Attempt_GSM_UART_Transmit_Wait(huart, "AT+COPS?", 1, 200) != 1)
-    {
-        return 0;
-    }*/
 
     if (Attempt_GSM_UART_Transmit_Wait(huart, "AT+CREG=2", 1, 200) != 1)
     {
         return 0;
     }
 
-    /*if (Attempt_GSM_UART_Transmit_Wait(huart, "AT+CREG?", 1, 200) != 1)
-    {
-        return 0;
-    }*/
-
     if (Attempt_GSM_UART_Transmit_Wait(huart, "AT+CREG=0", 1, 200) != 1)
     {
         return 0;
     }
-
-    /*if (Attempt_GSM_UART_Transmit_Wait(huart, "AT+CSQ", 1, 200) != 1)
-    {
-        return 0;
-    }*/
 
     return 1;
 }
@@ -289,16 +234,6 @@ int OK_PRESENCE(char * buffer)
 // Also, make sure phone_number has a "+1" at the front. Otherwise, it will fail.
 int GSM_Send_Text(UART_HandleTypeDef * huart, char * phone_number, char * message)
 {
-    /*if (Attempt_GSM_UART_Transmit_Wait(huart, "AT+CSCA?", 1, 200) != 1)
-    {
-        return 0;
-    }*/
-
-    /*if (Attempt_GSM_UART_Transmit_Wait(huart, "AT+CNMI?", 1, 200) != 1)
-    {
-        return 0;
-    }*/
-
     if (Attempt_GSM_UART_Transmit_Wait(huart, "AT+CMGF=1", 1, 200) != 1)
     {
         return 0;
@@ -323,8 +258,8 @@ int Attempt_GSM_UART_Transmit_Msg(UART_HandleTypeDef * huart, char * phone_numbe
     // At this point, the three lines of code above will make
     // full_command = AT+CMGS="phone_number"
 
-    // Make 5 attempts at sending a text message
-    /*for (int i = 0; i < 5; i++)
+    // Make 3 attempts at sending a text message
+    for (int i = 0; i < 3; i++)
     {
         // Command to send a text message
         if (Attempt_GSM_UART_Transmit_Wait(huart, full_command, 0, 200) != 1)
@@ -337,18 +272,6 @@ int Attempt_GSM_UART_Transmit_Msg(UART_HandleTypeDef * huart, char * phone_numbe
         {
             return 1;
         }
-    }*/
-
-    // Command to send a text message
-    if (Attempt_GSM_UART_Transmit_Wait(huart, full_command, 0, 200) != 1)
-    {
-        return 0;
-    }
-
-    // Transmit the actual message contents of the SMS
-    if (GSM_UART_Transmit_Msg(huart, message, 1) == 1)
-    {
-        return 1;
     }
 
     return 0;

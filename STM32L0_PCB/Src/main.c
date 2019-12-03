@@ -112,10 +112,10 @@ int main(void)
       // Turn on red LED
       HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, GPIO_PIN_SET);
 
-      // If signal is non-zero
-      if (GSM_Check_Signal(&huart2))
+      // If signal strength is >= 3
+      if (GSM_Check_Signal(&huart2) >= 3)
       {
-          if (text_update(&huart2, "+17657017922")) // <-- DON'T FORGET TO CHANGE THIS PHONE NUMBER
+          if (text_update(&huart2, TWILIO_PHONE_NUMBER)) // <-- DON'T FORGET TO CHANGE THIS PHONE NUMBER
           {
               // Blink the green LED
               while(1)
@@ -144,24 +144,6 @@ int main(void)
           }
       }
   }
-
-  // --- GSM STUFF ---
-  /*if (GSM_Init(&huart2) == 1)
-  {
-      HAL_Delay(5000);
-      HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, GPIO_PIN_SET);
-      int i = GSM_Send_Text(&huart2, "+12067346538", full_msg);
-      if (i)
-      {
-          while(1)
-          {
-              HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, GPIO_PIN_SET);
-              HAL_Delay(500);
-              HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, GPIO_PIN_RESET);
-              HAL_Delay(500);
-          }
-      }
-  }*/
 
   /* USER CODE END 2 */
 
