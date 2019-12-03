@@ -8,38 +8,19 @@
     <title>Dev Webpage</title>
     <script type="text/javascript" src="http://livejs.com/live.js"></script>
 
-<style>
-table, th, td
-{
-  border: 1px solid black;
-  border-collapse: collapse;
-}
-th, td
-{
-  padding: 15px;
-}
-table#t1 th
-{
-  background-color: #2dd698;
-}
-table#t1 tr:nth-child(even)
-{
-  background-color: #eee;
-}
-table#t1 tr:nth-child(odd)
-{
-  background-color: #fff;
-}
-</style>
+{% include 'style.css' %}
 
 </head>
 <body>
-
 {% include 'status.html' %}
+
+<p>Current Time: <span id="datetime"></span></p>
+<p id="message"></p>
 
 <!-- JAVASCRIPT FOR TIMERS -->
 <script>
 var timer_var = setInterval(end_timer, 1000);
+var clock_var = setInterval(clock ,1000);
 
 var start1 = new Date({{ s_time1 }});
 var start2 = new Date({{ s_time2 }});
@@ -50,6 +31,28 @@ var f_start1 = new Date({{ s_ftime1 }});
 var f_start2 = new Date({{ s_ftime2 }});
 var f_start3 = new Date({{ s_ftime3 }});
 var f_start4 = new Date({{ s_ftime4 }});
+
+function clock() {
+  var current_time = new Date();
+  var current_hour = current_time.getHours();
+  var message;
+  
+  if (current_hour < 6) {
+    message = "Students still awake at this hour are probably wondering to themselves: Am I finishing my degree or is my degree finising me...?";
+  }
+  else if (current_hour < 12) {
+    message = "Legend has it that Sreyas is probably still asleep...";
+  }
+  else if (current_hour < 16) {
+    message = "Good afternoon";
+  }
+  else {
+    message = "Good Evening";
+  }
+
+  document.getElementById("datetime").innerHTML = current_time.toLocaleTimeString();
+  document.getElementById("message").innerHTML = message;
+}
 
 function end_timer() {
   var end1 = new Date();
@@ -186,6 +189,7 @@ function end_timer() {
     document.getElementById("ftime4").innerHTML = f_hours4 + ' hours';
   }
 }
+
 </script>
 
 <!--<script src="{{url_for('static', filename='timer1.js')}}"></script>-->

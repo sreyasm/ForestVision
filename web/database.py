@@ -3,7 +3,7 @@
 import boto3
 from boto3.dynamodb.conditions import Key
 
-dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
+dynamodb = boto3.resource('dynamodb', region_name='us-east-2')
 table = dynamodb.Table('Cameras')
 
 def get_item(cam_id):
@@ -14,23 +14,25 @@ def get_all_items():
     resp = table.query(KeyConditionExpression=Key('Group').eq('FV'))
     return resp['Items'] # Returns list of items, use loop to iterate through
 
-def insert_item(cam_id, status, battery_life):
+def insert_item(cam_id, status, fire_status, battery_life):
     with table.batch_writer() as batch:
         batch.put_item(Item={"Group": "FV", "CameraID": cam_id,
-            "Status": status, "Battery Life": battery_life})
+            "Status": status, "Fire Status": fire_status, "Battery Life": battery_life})
 
-def update_item(cam_id, status, battery_life):
+def update_item(cam_id, status, fire_status, battery_life):
     resp = table.update_item(
         Key={"Group": "FV", "CameraID": cam_id},
         ExpressionAttributeNames={
             "#status": "Status",
+            "#fire": "Fire Status",
             "#battery_life": "Battery Life",
         },
         ExpressionAttributeValues={
             ":s": status,
+            ":f": fire_status,
             ":b": battery_life,
         },
-        UpdateExpression="SET #status = :s, #battery_life = :b",
+        UpdateExpression="SET #status = :s, #fire = :f, #battery_life = :b",
     )
 
 if __name__ == '__main__':
