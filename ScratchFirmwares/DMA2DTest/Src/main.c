@@ -34,7 +34,7 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 #define CAM_BUF (320*240)
-#define AI_BUF (320*240)
+#define AI_BUF (100*100*3)
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -72,7 +72,7 @@ static void Camera_Config(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 uint16_t RGB565_BUF[CAM_BUF] = {0};
-uint32_t RGB888_BUF[AI_BUF] = {0};
+//uint8_t RGB888_BUF[AI_BUF] = {0};
 uint8_t my_bmp_header[] = {
 		  0x42,0x4D,0x36,0x58,0x02,0x00,0x00,0x00,0x00,0x00, // ID=BM, Filsize=(240x320x2+66)
 		  0x42,0x00,0x00,0x00,0x28,0x00,0x00,0x00,           // Offset=66d, Headerlen=40d
@@ -91,13 +91,6 @@ uint8_t BMP_HEADER_100x100[]={
   0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,           // nc
   0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};          // nc
 
-uint8_t BMP_HEADER_320x240[]={
-  0x42,0x4D,0x36,0x84,0x03,0x00,0x00,0x00,0x00,0x00, // ID=BM, Filsize=(320x240x3+54)
-  0x36,0x00,0x00,0x00,0x28,0x00,0x00,0x00,           // Offset=54d, Headerlen=40d
-  0x40,0x01,0x00,0x00,0xF0,0x00,0x00,0x00,0x01,0x00, // W=320d, H=240d (landscape)
-  0x18,0x00,0x00,0x00,0x00,0x00,0x00,0x84,0x03,0x00, // 24bpp, unkomprimiert, Data=(320x240x3)
-  0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,           // nc
-  0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};          // nc
 /* USER CODE END 0 */
 
 /**
@@ -152,19 +145,21 @@ int main(void)
   }
 
 
-  HAL_UART_Transmit(&huart4,BMP_HEADER_100x100,sizeof(BMP_HEADER_100x100),2000);
+  /*HAL_UART_Transmit(&huart4,BMP_HEADER_100x100,sizeof(BMP_HEADER_100x100),2000);
+  int pix = 0;
   for(int y = 0;y < (320*100);y += 320) {
 	  for(int x = 0;x < 100;x++) {
-	  int i = x + y;
-	  uint8_t r = ((RGB565_BUF[i]&0xF800)>>8);  // 5bit red
-	  uint8_t g = ((RGB565_BUF[i]&0x07E0)>>3);  // 6bit green
-	  uint8_t b = ((RGB565_BUF[i]&0x001F)<<3);  // 5bit blue
-	  HAL_UART_Transmit(&huart4,&b,1,2000);
-	  HAL_UART_Transmit(&huart4,&g,1,2000);
-	  HAL_UART_Transmit(&huart4,&r,1,2000);
+		  int i = x + y;
+		  RGB888_BUF[pix] = ((RGB565_BUF[i]&0xF800)>>8);  // 5bit red
+		  RGB888_BUF[pix+1] = ((RGB565_BUF[i]&0x07E0)>>3);  // 6bit green
+		  RGB888_BUF[pix+2] = ((RGB565_BUF[i]&0x001F)<<3);  // 5bit blue
+		  HAL_UART_Transmit(&huart4,&RGB888_BUF[pix],1,2000);
+		  HAL_UART_Transmit(&huart4,&RGB888_BUF[pix+1],1,2000);
+		  HAL_UART_Transmit(&huart4,&RGB888_BUF[pix+2],1,2000);
+		  pix++;
 	  }
   }
-  HAL_Delay(300);
+  HAL_Delay(300);*/
   HAL_UART_Transmit(&huart4,my_bmp_header,sizeof(my_bmp_header),2000);
   for(int i = 0;i < CAM_BUF;i++) {
 	  uint8_t lsb = RGB565_BUF[i] & 0xFF;
@@ -521,6 +516,7 @@ static void Camera_Config(void) {
 	  {0xca,0xe8},{0xcb,0xf0},{0xcc,0xd8},{0xcd,0x93},{0x12,0x63},{0x40,0x10},
 	  {0x15,0x08}
 	};
+
 	for(int i = 0;i < sizeof(OV9655_QVGA_TAB)/2;i++) {
 		HAL_I2C_Mem_Write(&hi2c4,0x60,OV9655_QVGA_TAB[i][0],I2C_MEMADD_SIZE_8BIT,&(OV9655_QVGA_TAB[i][1]),1,2000);
 		HAL_Delay(2);
