@@ -34,7 +34,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define CAM_BUF (320*240*2)
+#define CAM_BUF (320*240)
 #define CROP_BUF (100*100*3)
 /* USER CODE END PD */
 
@@ -68,6 +68,7 @@ static void MX_UART4_Init(void);
 static void MX_CRC_Init(void);
 /* USER CODE BEGIN PFP */
 static void Camera_Config(void);
+void RGB24_to_Float_Asym(void *pSrc, void *pDst, uint32_t pixels);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -78,16 +79,22 @@ static void Camera_Config(void);
 AI_ALIGNED(4)
 static ai_u8 initCapAndActivations[AI_NETWORK_DATA_ACTIVATIONS_SIZE];
 
-//uint16_t RGB565_BUF[CAM_BUF] = {0};
+AI_ALIGNED(4)
+static ai_i8 ai_in_data[AI_NETWORK_IN_1_SIZE_BYTES];
 
-uint8_t RGB888_BUF[CROP_BUF] = {0};
+AI_ALIGNED(4)
+static ai_i8 ai_out_data[AI_NETWORK_OUT_1_SIZE_BYTES];
 
-//AI_ALIGNED(4)
-//static ai_i8 ai_in_data[AI_NETWORK_IN_1_SIZE_BYTES];
-
-//AI_ALIGNED(4)
-//static ai_i8 ai_out_data[AI_NETWORK_OUT_1_SIZE_BYTES];
-
+uint8_t my_bmp_header[] = {
+		  0x42,0x4D,0x36,0x58,0x02,0x00,0x00,0x00,0x00,0x00, // ID=BM, Filsize=(240x320x2+66)
+		  0x42,0x00,0x00,0x00,0x28,0x00,0x00,0x00,           // Offset=66d, Headerlen=40d
+		  0x40,0x01,0x00,0x00,0xF0,0x00,0x00,0x00,0x01,0x00, // W=320d, H=240d (landscape)
+		  0x10,0x00,0x03,0x00,0x00,0x00,0x00,0x58,0x02,0x00, // 16bpp, bitfields, Data=(240x320x2)
+		  0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,           // nc
+		  0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,			 // nc
+		  0x00,0xF8,0x00,0x00,0xE0,0x07,0x00,0x00,			 // Color Table
+		  0x1F,0x00,0x00,0x00								 // Color Table
+};
 uint8_t BMP_HEADER_100x100[]={
   0x42,0x4D,0x66,0x75,0x00,0x00,0x00,0x00,0x00,0x00, // ID=BM, Filsize=(100x100x3+54)
   0x36,0x00,0x00,0x00,0x28,0x00,0x00,0x00,           // Offset=54d, Headerlen=40d
@@ -137,49 +144,70 @@ int main(void)
   MX_I2C4_Init();
   MX_UART4_Init();
   MX_CRC_Init();
-  //MX_X_CUBE_AI_Init();
+  MX_X_CUBE_AI_Init();
   /* USER CODE BEGIN 2 */
   Camera_Config();
   HAL_Delay(2000);
+  aiInit(initCapAndActivations);
+
+  // image capture
+  HAL_DCMI_Start_DMA(&hdcmi,DCMI_MODE_SNAPSHOT,(uint32_t) &initCapAndActivations,
+	  		(uint32_t) CAM_BUF);
+  while(HAL_DCMI_GetState(&hdcmi) != HAL_DCMI_STATE_READY) {
+    HAL_GPIO_WritePin(LED1_GPIO_Port,LED1_Pin,GPIO_PIN_SET);
+    HAL_Delay(200);
+    HAL_GPIO_WritePin(LED1_GPIO_Port,LED1_Pin,GPIO_PIN_RESET);
+    HAL_Delay(200);
+  }
+
+
+  HAL_UART_Transmit(&huart4, &my_bmp_header,sizeof(my_bmp_header),2000);
+  for(int i = 0;i < CAM_BUF*2;i++) {
+	  HAL_UART_Transmit(&huart4,&initCapAndActivations[i],1,2000);
+  }
+  HAL_Delay(300);
+
+  //ImageResize(initCapAndActivations, 320, 240, 2, 0, 0, 0, 0, ai_in_data, 100, 100);
+
+
+  // convert to RGB888
+  uint8_t RGB888[CROP_BUF] = {0};
+  HAL_UART_Transmit(&huart4, &BMP_HEADER_100x100,sizeof(BMP_HEADER_100x100),2000);
+  int pix = 0;
+  //for(int i = 0;i < (100*100*2);i+=2) {
+  for(int y = 0;y < (320*100);y += 320) {
+    for(int x = 0;x < (100);x++) {
+      int i = (x + y) * 2;
+      RGB888[pix] = ((initCapAndActivations[i+1]&0xF8)>>8);  // 5bit red
+      RGB888[pix+1] = (((initCapAndActivations[i+1]&0xE0)) |
+      		((initCapAndActivations[i]&0x7)<<2));  // 6bit green
+      RGB888[pix+2] = ((initCapAndActivations[i]&0x1F)<<3);  // 5bit blue
+      HAL_UART_Transmit(&huart4,&RGB888[pix],1,2000);
+      HAL_UART_Transmit(&huart4,&RGB888[pix+1],1,2000);
+      HAL_UART_Transmit(&huart4,&RGB888[pix+2],1,2000);
+      //pix += 3;
+    }
+  }
+
+
+      // scale pixels [0,1]
+      RGB24_to_Float_Asym((void*)RGB888,(void*)ai_in_data,(uint32_t)CROP_BUF/3);
+
+      // run inference
+      //aiRun((void*)ai_in_data,(void*)ai_out_data);
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  while (1)
-  {
-	// image capture
-    HAL_DCMI_Start_DMA(&hdcmi,DCMI_MODE_SNAPSHOT,(uint32_t) &initCapAndActivations, (uint32_t) CAM_BUF);
-    while(HAL_DCMI_GetState(&hdcmi) != HAL_DCMI_STATE_READY) {
-      HAL_GPIO_WritePin(LED1_GPIO_Port,LED1_Pin,GPIO_PIN_SET);
-      HAL_Delay(200);
-      HAL_GPIO_WritePin(LED1_GPIO_Port,LED1_Pin,GPIO_PIN_RESET);
-      HAL_Delay(200);
-    }
-
-    // convert to RGB888
-    int pix = 0;
-    for(int y = 0;y < (320*100);y += 320) {
-  	  for(int x = 0;x < 100;x++) {
-        int i = x + y;
-        RGB888_BUF[pix] = ((initCapAndActivations[i]&0xF800)>>3);  // 5bit red
-        RGB888_BUF[pix+1] = ((initCapAndActivations[i]&0x07E0)>>3);  // 6bit green
-        RGB888_BUF[pix+2] = ((initCapAndActivations[i]&0x001F)<<3);  // 5bit blue
-        HAL_UART_Transmit(&huart4,&RGB888_BUF[pix],1,2000);
-        HAL_UART_Transmit(&huart4,&RGB888_BUF[pix+1],1,2000);
-        HAL_UART_Transmit(&huart4,&RGB888_BUF[pix+2],1,2000);
-        pix++;
-  	  }
-    }
-
-    // scale pixels [0,1]
-    //RGB24_to_Float_Asym((void*)RGB888_BUF,(void*)ai_in_data,(uint32_t)(100*100));
-
-    // run inference
-    //aiRun((void*)ai_in_data,(void*)ai_out_data);
-
+  while (1) {
+    HAL_GPIO_WritePin(LED2_GPIO_Port,LED2_Pin,GPIO_PIN_SET);
+    HAL_Delay(500);
+    HAL_GPIO_WritePin(LED2_GPIO_Port,LED2_Pin,GPIO_PIN_RESET);
+    HAL_Delay(500);
     /* USER CODE END WHILE */
 
-  //MX_X_CUBE_AI_Process();
+  MX_X_CUBE_AI_Process();
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
@@ -513,6 +541,117 @@ static void Camera_Config(void) {
 		HAL_I2C_Mem_Write(&hi2c4,0x60,OV9655_QVGA_TAB[i][0],I2C_MEMADD_SIZE_8BIT,&(OV9655_QVGA_TAB[i][1]),1,2000);
 		HAL_Delay(2);
 	}
+}
+
+/**
+  * @brief  Performs pixel conversion from 8-bits integer to float simple precision with asymmetric normalization, i.e. in the range [0,+1]
+  * @param  pSrc     Pointer to source buffer
+  * @param  pDst     Pointer to destination buffer
+  * @param  pixels   Number of pixels
+  * @retval void     None
+  */
+void RGB24_to_Float_Asym(void *pSrc, void *pDst, uint32_t pixels)
+{
+  struct rgb
+  {
+    uint8_t r, g, b;
+  };
+  struct rgbf
+  {
+    float r, g, b;
+  };
+  struct rgb *pivot = (struct rgb *) pSrc;
+  struct rgbf *dest = (struct rgbf *) pDst;
+  for (int i = 0; i < pixels; i++)
+  {
+    dest[i].r = (((float)(pivot[i].b)) / 255.0F);
+    dest[i].g = (((float)(pivot[i].g)) / 255.0F);
+    dest[i].b = (((float)(pivot[i].r)) / 255.0F);
+  }
+
+  /*==> NN input data in the range [0 , +1]*/
+}
+/**
+  * @brief  Performs image (or selected Region Of Interest) resizing using bilinear interpolation
+  * @param  srcImage     Pointer to source image buffer
+  * @param  srcW         Source image width
+  * @param  srcH         Source image height
+  * @param  pixelSize    Number of bytes per pixel
+  * @param  roiX         Region Of Interest x starting location
+  * @param  roiY         Region Of Interest y starting location
+  * @param  roiW         Region Of Interest width
+  * @param  roiH         Region Of Interest height
+  * @param  dstImage     Pointer to destination image buffer
+  * @param  dstW         Destination image width
+  * @param  dstH         Destination image height
+  * @retval void         None
+  */
+void ImageResize(uint8_t *srcImage, uint32_t srcW, uint32_t srcH,
+                 uint32_t pixelSize, uint32_t roiX, uint32_t roiY,
+                 uint32_t roiW, uint32_t roiH,  uint8_t *dstImage,
+                 uint32_t dstW, uint32_t dstH)
+{
+  int32_t srcStride;
+  float widthRatio;
+  float heightRatio;
+
+  int32_t maxWidth;
+  int32_t maxHeight;
+
+  float srcX, srcY, dX1, dY1, dX2, dY2;
+  int32_t dstX1, srcY1, dstX2, srcY2;
+
+  uint8_t *tmp1, *tmp2;
+  uint8_t *p1, *p2, *p3, *p4;
+
+  int32_t offset1;
+  int32_t offset2;
+
+  srcStride = pixelSize * srcW;
+
+  widthRatio = ((roiW ? roiW : srcW) / (float) dstW);
+  heightRatio = ((roiH ? roiH : srcH) / (float) dstH);
+
+  /* Get horizontal and vertical limits. */
+  maxWidth = (roiW ? roiW : srcW) - 1;
+  maxHeight = (roiH ? roiH : srcH) - 1;
+
+  for (int32_t y = 0; y < dstH; y++)
+  {
+    /* Get Y from source. */
+    srcY = ((float) y * heightRatio) + roiY;
+    srcY1 = (int32_t) srcY;
+    srcY2 = (srcY1 == maxHeight) ? srcY1 : srcY1 + 1;
+    dY1 = srcY - (float) srcY1;
+    dY2 = 1.0f - dY1;
+
+    /* Calculates the pointers to the two needed lines of the source. */
+    tmp1 = srcImage + srcY1 * srcStride;
+    tmp2 = srcImage + srcY2 * srcStride;
+
+    for (int32_t x = 0; x < dstW; x++)
+    {
+      /* Get X from source. */
+      srcX = x * widthRatio + roiX;
+      dstX1 = (int32_t) srcX;
+      dstX2 = (dstX1 == maxWidth) ? dstX1 : dstX1 + 1;
+      dX1 = srcX - /*(float32)*/dstX1;
+      dX2 = 1.0f - dX1;
+
+      /* Calculates the four points (p1,p2, p3, p4) of the source. */
+      offset1 = dstX1 * pixelSize;
+      offset2 = dstX2 * pixelSize;
+      p1 = tmp1 + offset1;
+      p2 = tmp1 + offset2;
+      p3 = tmp2 + offset1;
+      p4 = tmp2 + offset2;
+      /* For each channel, interpolate the four points. */
+      for (int32_t ch = 0; ch < pixelSize; ch++, dstImage++, p1++, p2++, p3++, p4++)
+      {
+        *dstImage = (uint8_t)(dY2 * (dX2 * (*p1) + dX1 * (*p2)) + dY1 * (dX2 * (*p3) + dX1 * (*p4)));
+      }
+    }
+  }
 }
 /* USER CODE END 4 */
 

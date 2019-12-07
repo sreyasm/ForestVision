@@ -135,72 +135,72 @@ void MX_X_CUBE_AI_Init(void)
     /* USER CODE BEGIN 0 */
     /* Activation/working buffer is allocated as a static memory chunk
      * (bss section) */
-    AI_ALIGNED(4)
+    /*AI_ALIGNED(4)
     static ai_u8 activations[AI_NETWORK_DATA_ACTIVATIONS_SIZE];
 
-    aiInit(activations);
+    aiInit(activations);*/
     /* USER CODE END 0 */
 }
 
 void MX_X_CUBE_AI_Process(void)
 {
     /* USER CODE BEGIN 1 */
-	int nb_run = 20;
+	/*int nb_run = 20;
     int res;
 
-    /* Example of definition of the buffers to store the tensor input/output */
-    /*  type is dependent of the expected format                             */
+    // Example of definition of the buffers to store the tensor input/output
+    // type is dependent of the expected format
     AI_ALIGNED(4)
     static ai_i8 in_data[AI_NETWORK_IN_1_SIZE_BYTES];
 
     AI_ALIGNED(4)
     static ai_i8 out_data[AI_NETWORK_OUT_1_SIZE_BYTES];
 
-    /* Retrieve format/type of the first input tensor - index 0 */
+    // Retrieve format/type of the first input tensor - index 0
     const ai_buffer_format fmt_ = AI_BUFFER_FORMAT(&ai_input[0]);
     const uint32_t type_ = AI_BUFFER_FMT_GET_TYPE(fmt_);
 
-    /* Prepare parameters for float to Qmn conversion */
+    // Prepare parameters for float to Qmn conversion
     const ai_i16 N_ = AI_BUFFER_FMT_GET_FBITS(fmt_);
     const ai_float scale_ = (0x1U << N_);
     const ai_i16 M_ =  AI_BUFFER_FMT_GET_BITS(fmt_)
                        - AI_BUFFER_FMT_GET_SIGN(fmt_) - N_;
     const ai_float max_ = (ai_float)(0x1U << M_);
 
-    /* Perform nb_rub inferences (batch = 1) */
+    // Perform nb_rub inferences (batch = 1)
     while (--nb_run) {
 
-        /* ---------------------------------------- */
-        /* Data generation and Pre-Process          */
-        /* ---------------------------------------- */
-        /* - fill the input buffer with random data */
+        // ----------------------------------------
+        // Data generation and Pre-Process
+        // ----------------------------------------
+        // - fill the input buffer with random data
         for (ai_size i=0;  i < AI_NETWORK_IN_1_SIZE; i++ ) {
 
-            /* Generate random data in the range [-1, 1] */
+            // Generate random data in the range [-1, 1]
             ai_float val = 2.0f * (ai_float)rand() / (ai_float)RAND_MAX - 1.0f;
 
-            /* Convert the data if necessary */
+            // Convert the data if necessary
             if (type_ == AI_BUFFER_FMT_TYPE_FLOAT) {
                 ((ai_float *)in_data)[i] = val;
-            } else { /* AI_BUFFER_FMT_TYPE_Q */
-                /* Scale the values in the range [-2^M, 2^M] */
+            } else { // AI_BUFFER_FMT_TYPE_Q
+                // Scale the values in the range [-2^M, 2^M]
                 val *= max_;
-                /* Convert float to Qmn format */
+                // Convert float to Qmn format
                 const ai_i32 tmp_ = AI_ROUND(val * scale_, ai_i32);
                 in_data[i] =  AI_CLAMP(tmp_, -128, 127, ai_i8);
             }
         }
 
-        /* Perform the inference */
+        // Perform the inference
         res = aiRun(in_data, out_data);
         if (res) {
             // ...
             return;
         }
 
-        /* Post-Process - process the output buffer */
+        // Post-Process - process the output buffer
         // ...
-    }
+    }*/
     /* USER CODE END 1 */
 }
 #ifdef __cplusplus

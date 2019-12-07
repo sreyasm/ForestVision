@@ -201,7 +201,7 @@ void HAL_DCMI_MspInit(DCMI_HandleTypeDef* hdcmi)
     hdma_dcmi.Init.PeriphInc = DMA_PINC_DISABLE;
     hdma_dcmi.Init.MemInc = DMA_MINC_ENABLE;
     hdma_dcmi.Init.PeriphDataAlignment = DMA_PDATAALIGN_WORD;
-    hdma_dcmi.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
+    hdma_dcmi.Init.MemDataAlignment = DMA_MDATAALIGN_HALFWORD;
     hdma_dcmi.Init.Mode = DMA_NORMAL;
     hdma_dcmi.Init.Priority = DMA_PRIORITY_HIGH;
     hdma_dcmi.Init.FIFOMode = DMA_FIFOMODE_ENABLE;
