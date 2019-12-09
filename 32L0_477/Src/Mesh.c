@@ -246,6 +246,7 @@ void Init_RT(){ //Init everything to all 1's
 		rt[i].num_hop	= 0;
 		rt[i].signal	= 0;
 		rt[i].battery	= 0;
+		rt[i].fire		= 0;
 		for(int j = 0; j < MAX_NODE; j++)
 		{
 			rt[i].route[j]	= 0;
@@ -262,15 +263,16 @@ void Convert_Table_to_Pkt(uint8_t* packet){ //packet should be min size 152 for 
 	packet[SENDER_ID]	= self_ID;
 	for(int i = 0; i < MAX_NODE; i++)
 	{
-		packet[(i*16)+2] = rt[i].dest_ID != 0 ? rt[i].dest_ID : 0xFF;
-		packet[(i*16)+3] = rt[i].active != 0 ? rt[i].active : 0xFF;
-		packet[(i*16)+4] = rt[i].next_hop != 0 ? rt[i].next_hop : 0xFF;
-		packet[(i*16)+5] = rt[i].num_hop != 0 ? rt[i].num_hop : 0xFF;
-		packet[(i*16)+6] = rt[i].signal != 0 ? rt[i].signal : 0xFF;
-		packet[(i*16)+7] = rt[i].battery != 0 ? rt[i].battery : 0xFF;
+		packet[(i*17)+2] = rt[i].dest_ID != 0 ? rt[i].dest_ID : 0xFF;
+		packet[(i*17)+3] = rt[i].active != 0 ? rt[i].active : 0xFF;
+		packet[(i*17)+4] = rt[i].next_hop != 0 ? rt[i].next_hop : 0xFF;
+		packet[(i*17)+5] = rt[i].num_hop != 0 ? rt[i].num_hop : 0xFF;
+		packet[(i*17)+6] = rt[i].signal != 0 ? rt[i].signal : 0xFF;
+		packet[(i*17)+7] = rt[i].battery != 0 ? rt[i].battery : 0xFF;
+		packet[(i*17)+8] = rt[i].fire != 0 ? rt[i].fire : 0xFF;
 		for(int j = 0; j < MAX_NODE; j++)
 		{
-			packet[(i*16)+j+8] = rt[i].route[j] != 0 ? rt[i].route[j] : 0xFF;
+			packet[(i*17)+j+9] = rt[i].route[j] != 0 ? rt[i].route[j] : 0xFF;
 		}
 	}
 }
@@ -279,15 +281,16 @@ void Convert_Pkt_to_Table(uint8_t* packet){
 	sender_ID = packet[SENDER_ID];
 	for(int i = 0; i < MAX_NODE; i++)
 	{
-		recv_rt[i].dest_ID	= packet[(i*16)+2] != 0xFF ? packet[(i*16)+2] : 0;
-		recv_rt[i].active	= packet[(i*16)+3] != 0xFF ? packet[(i*16)+3] : 0;
-		recv_rt[i].next_hop	= packet[(i*16)+4] != 0xFF ? packet[(i*16)+4] : 0;
-		recv_rt[i].num_hop	= packet[(i*16)+5] != 0xFF ? packet[(i*16)+5] : 0;
-		recv_rt[i].signal	= packet[(i*16)+6] != 0xFF ? packet[(i*16)+6] : 0;
-		recv_rt[i].battery  = packet[(i*16)+7] != 0xFF ? packet[(i*16)+7] : 0;
+		recv_rt[i].dest_ID	= packet[(i*17)+2] != 0xFF ? packet[(i*17)+2] : 0;
+		recv_rt[i].active	= packet[(i*17)+3] != 0xFF ? packet[(i*17)+3] : 0;
+		recv_rt[i].next_hop	= packet[(i*17)+4] != 0xFF ? packet[(i*17)+4] : 0;
+		recv_rt[i].num_hop	= packet[(i*17)+5] != 0xFF ? packet[(i*17)+5] : 0;
+		recv_rt[i].signal	= packet[(i*17)+6] != 0xFF ? packet[(i*17)+6] : 0;
+		recv_rt[i].battery  = packet[(i*17)+7] != 0xFF ? packet[(i*17)+7] : 0;
+		recv_rt[i].fire		= packet[(i*17)+8] != 0xFF ? packet[(i*17)+8] : 0;
 		for(int j = 0; j < MAX_NODE; j++)
 		{
-			recv_rt[i].route[j]	= packet[(i*16)+j+8] != 0xFF ? packet[(i*16)+j+8] : 0;
+			recv_rt[i].route[j]	= packet[(i*17)+j+9] != 0xFF ? packet[(i*17)+j+9] : 0;
 		}
 	}
 }
@@ -298,8 +301,8 @@ void Print_RT(){
 		if(rt[i].active != 0)
 		{
 			uint8_t msg[256];
-			sprintf(msg,"ID: %d, Active: %d, Next_hop: %d, num_hop: %d, signal: %d, battery: %d", rt[i].dest_ID,
-					rt[i].active, rt[i].next_hop, rt[i].num_hop, rt[i].signal, rt[i].battery);
+			sprintf(msg,"ID: %d, Active: %d, Next_hop: %d, num_hop: %d, signal: %d, battery: %d, fire: %d", rt[i].dest_ID,
+					rt[i].active, rt[i].next_hop, rt[i].num_hop, rt[i].signal, rt[i].battery, rt[i].fire);
 			UART_send(msg);
 			sprintf(msg,"%d -> %d -> %d -> %d -> %d -> %d -> %d -> %d -> %d -> %d",
 					rt[i].route[0],rt[i].route[1],rt[i].route[2],rt[i].route[3],rt[i].route[4],
@@ -328,7 +331,9 @@ void Update_Packet(){ //Ensure that recv_packet is updated using Convert_Pkt_to_
 	{
 		if(rt[j].active == 1 && rt[j].dest_ID == self_ID)
 		{
+			rt[j].signal = self_signal;
 			rt[j].battery = self_battery;
+			rt[j].fire = self_fire;
 			break;
 		}
 	}
@@ -347,6 +352,7 @@ void Update_Packet(){ //Ensure that recv_packet is updated using Convert_Pkt_to_
 					rt[j].num_hop = 1;
 					rt[j].signal = recv_rt[i].signal;
 					rt[j].battery = recv_rt[i].battery;
+					rt[j].fire 	= recv_rt[i].fire;
 					rt[j].route[0] = self_ID; rt[j].route[1] = recv_rt[i].dest_ID; rt[j].route[2] = 0;
 				}
 			}
@@ -363,6 +369,7 @@ void Update_Packet(){ //Ensure that recv_packet is updated using Convert_Pkt_to_
 						rt[j].num_hop = 1;
 						rt[j].signal = recv_rt[i].signal;
 						rt[j].battery = recv_rt[i].battery;
+						rt[j].fire = recv_rt[i].fire;
 						rt[j].route[0] = self_ID; rt[j].route[1] = recv_rt[i].dest_ID; rt[j].route[2] = 0;
 						break;
 					}
@@ -395,6 +402,7 @@ void Update_Packet(){ //Ensure that recv_packet is updated using Convert_Pkt_to_
 						rt[j].num_hop = recv_rt[i].num_hop + 1;
 						rt[j].signal = recv_rt[i].signal;
 						rt[j].battery = recv_rt[i].battery;
+						rt[j].fire = recv_rt[i].fire;
 						rt[j].route[0] = self_ID;
 						for(int k = 0; k < (MAX_NODE - 1); k++){
 							rt[j].route[k+1] = recv_rt[i].route[k];
@@ -424,6 +432,7 @@ void Update_Packet(){ //Ensure that recv_packet is updated using Convert_Pkt_to_
 							rt[j].num_hop = recv_rt[i].num_hop + 1;
 							rt[j].signal = recv_rt[i].signal;
 							rt[j].battery = recv_rt[i].battery;
+							rt[j].fire = recv_rt[i].fire;
 							rt[j].route[0] = self_ID;
 							for(int k = 0; k < (MAX_NODE-1); k++){
 								rt[j].route[k+1] = recv_rt[i].route[k];
@@ -465,6 +474,20 @@ void Update_Packet(){ //Ensure that recv_packet is updated using Convert_Pkt_to_
 	}
 }
 
+void Update_Self()
+{
+	//update myself
+	for(int j = 0; j < MAX_NODE; j++)
+	{
+		if(rt[j].active == 1 && rt[j].dest_ID == self_ID)
+		{
+			rt[j].signal = self_signal;
+			rt[j].battery = self_battery;
+			rt[j].fire = self_fire;
+			break;
+		}
+	}
+}
 void Delete_Router(uint8_t router)
 {
 	for(int i = 0; i < MAX_NODE; i++){
@@ -479,6 +502,7 @@ void Delete_Router(uint8_t router)
 				rt[i].num_hop = 0;
 				rt[i].signal = 0;
 				rt[i].battery = 0;
+				rt[i].fire = 0;
 				for(int j = 0; j < MAX_NODE; j++){
 					rt[i].route[j] = 0;
 				}
@@ -500,6 +524,7 @@ void Delete_Router(uint8_t router)
 					rt[i].num_hop = 0;
 					rt[i].signal = 0;
 					rt[i].battery = 0;
+					rt[i].fire = 0;
 					for(int j = 0; j < MAX_NODE; j++){
 						rt[i].route[j] = 0;
 					}

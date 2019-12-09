@@ -1,6 +1,16 @@
 #MicroXplorer Configuration settings - do not modify
 Dma.Request0=USART2_RX
-Dma.RequestsNb=1
+Dma.Request1=USART1_RX
+Dma.RequestsNb=2
+Dma.USART1_RX.1.Direction=DMA_PERIPH_TO_MEMORY
+Dma.USART1_RX.1.Instance=DMA1_Channel3
+Dma.USART1_RX.1.MemDataAlignment=DMA_MDATAALIGN_BYTE
+Dma.USART1_RX.1.MemInc=DMA_MINC_ENABLE
+Dma.USART1_RX.1.Mode=DMA_NORMAL
+Dma.USART1_RX.1.PeriphDataAlignment=DMA_PDATAALIGN_BYTE
+Dma.USART1_RX.1.PeriphInc=DMA_PINC_DISABLE
+Dma.USART1_RX.1.Priority=DMA_PRIORITY_LOW
+Dma.USART1_RX.1.RequestParameters=Instance,Direction,PeriphInc,MemInc,PeriphDataAlignment,MemDataAlignment,Mode,Priority
 Dma.USART2_RX.0.Direction=DMA_PERIPH_TO_MEMORY
 Dma.USART2_RX.0.Instance=DMA1_Channel5
 Dma.USART2_RX.0.MemDataAlignment=DMA_MDATAALIGN_BYTE
@@ -57,6 +67,7 @@ Mcu.UserConstants=
 Mcu.UserName=STM32L053C8Tx
 MxCube.Version=5.3.0
 MxDb.Version=DB.5.0.30
+NVIC.DMA1_Channel2_3_IRQn=true\:0\:0\:false\:false\:true\:false\:true
 NVIC.DMA1_Channel4_5_6_7_IRQn=true\:0\:0\:false\:false\:true\:false\:true
 NVIC.EXTI4_15_IRQn=true\:0\:0\:false\:false\:true\:true\:true
 NVIC.HardFault_IRQn=true\:0\:0\:false\:false\:true\:false\:false

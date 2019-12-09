@@ -57,5 +57,6 @@ void Convert_Table_to_Pkt(uint8_t*);
 void Convert_Pkt_to_Table(uint8_t*);
 void Print_RT();
 void Update_Packet();
+void Update_Self();
 void Delete_Router(uint8_t);
 //END of function definition---------------------------------------------

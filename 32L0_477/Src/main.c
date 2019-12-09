@@ -24,6 +24,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "mesh.h"
+#include "G350.h"
 #include "fuel_gauge.h"
 /* USER CODE END Includes */
 
@@ -52,12 +53,16 @@ TIM_HandleTypeDef htim6;
 
 UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart2;
+DMA_HandleTypeDef hdma_usart1_rx;
 DMA_HandleTypeDef hdma_usart2_rx;
 
 /* USER CODE BEGIN PV */
 int first = 0;
 bool TIMEOUT_interrupt = false;
 bool LORA_interrupt = false;
+uint8_t fireBuffer_A[256] = "\0";
+uint8_t fireBuffer = '\0';
+bool emergency = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -119,6 +124,42 @@ void UART_send(uint8_t* data)
 	HAL_Delay(100);
 }
 
+void Update_Fire()
+{
+
+	if (strlen(fireBuffer_A) != 0)
+	{
+
+		fireBuffer = fireBuffer_A[strlen(fireBuffer_A)- 1];
+
+		uint8_t dma[16];
+		sprintf(dma,"Message Read: %c", fireBuffer);
+		UART_send(dma);
+
+		if (fireBuffer == 'F' || fireBuffer == 'f')
+		{
+			self_fire = 1;
+			emergency = 1;
+		}
+		else if (fireBuffer == 'N' || fireBuffer == 'n')
+		{
+			self_fire = 0;
+		}
+		else if (fireBuffer == 'E' || fireBuffer == 'e')
+		{
+			self_fire = 2;
+		}
+	}
+	HAL_UART_DMAStop(&huart1);
+
+	memset(fireBuffer_A,0,256);
+	fireBuffer = '\0';
+
+	if (HAL_UART_Receive_DMA(&huart1, fireBuffer_A, 256) != HAL_OK)
+	{
+		UART_send("DMA failed");
+	}
+}
 /* USER CODE END 0 */
 
 /**
@@ -186,25 +227,39 @@ int main(void)
 //	  HAL_GPIO_WritePin(LED1_GPIO_Port,LED1_Pin,GPIO_PIN_SET);
 //	  send(hspi2,GPIOB,"Timeout Successful");
 //  }
-  HAL_Delay(500);
-  if (self_ID == 3) { FG_I2C_Setup(&hi2c2); } //TODO: Fix for the future
   UART_send("New");
+
+  //Init variable
   self_ID = SELF_ID;
   self_battery = 0;
+  self_fire = 0;
   uint8_t data[256];
 
   //Init
+  HAL_Delay(500);
+  #if IS_PCB == 1
+    FG_I2C_Setup(&hi2c2);
+  #endif
   Init_timeout();
   Init_RT();
   Print_RT();
+  uint8_t GSM = GSM_Init(&huart2);
+
 
   //Set timer
   set_tim2(UPDATE_PERIOD);
   setModeRx(hspi2,GPIOB);
 
-  //Set interrupt;
+  //Set interrupt and counter
   LORA_interrupt = false;
   TIMEOUT_interrupt = false;
+  uint8_t update_server = 3; // a counter that counts down to 0 then update the GSM server.
+
+  // FIRE DMA first Init
+  if (HAL_UART_Receive_DMA(&huart1, fireBuffer_A, 256) != HAL_OK)
+  {
+	  UART_send("DMA failed");
+  }
 
   while(1)
   {
@@ -219,13 +274,14 @@ int main(void)
 
 	  if(LORA_interrupt == true){ //received a Lora Packet
 
+		UART_send("Lora Interrupt Detected");
 		//reset the interrupt
 		LORA_interrupt = false;
 
 		//wait to receive the whole packet (Read the status register until RX_Done is true)
 		uint32_t timer = HAL_GetTick();
 		while(spiRead(hspi2,GPIOB,0x12) != 80 && ( (HAL_GetTick()-timer) < 1000) ); //Timeout in 1 sec
-		if( (HAL_GetTick - timer) < 1000) {LORA_interrupt = false; continue;}
+		if( (HAL_GetTick - timer) < 1000) {LORA_interrupt = false; setModeRx(hspi2,GPIOB); continue;}
 
 		spiReadbuff(hspi2,GPIOB,data);
 		if(data[TYPE] == UPDATE_PACKET) //received an Update_Packet
@@ -244,8 +300,13 @@ int main(void)
 		  TIMEOUT_interrupt = false;
 		  Check_timeout(); //Check if there is any timeout
 
-		  //Read battery
-		  if(self_ID == 3) {self_battery = (uint8_t) FG_I2C_Read_SOC(&hi2c2);} //TODO: Fix in the future
+		  //Read battery and GSM and Fire and update the data of self
+		  #if IS_PCB == 1
+		  	  self_battery = FG_I2C_Read_SOC(&hi2c2);
+		  #endif
+		  if(GSM == 1) {self_signal = GSM_Check_Signal(&huart2);}
+		  Update_Fire();
+		  Update_Self();
 
 		  //Send Packet
 		  Convert_Table_to_Pkt(data);
@@ -255,172 +316,23 @@ int main(void)
 		  setModeRx(hspi2,GPIOB);
 		  set_tim2(UPDATE_PERIOD);
 
-		  UART_send("Updated neighbors");
+		  UART_send("Updated Neighbors");
+		  Print_RT();
+
+		  //Update GSM
+		  update_server--;
+		  if(update_server == 0 || emergency == 1) { //update server
+			  if(GSM == 1 && self_signal >= 3)
+			  {
+				  uint8_t SMS_sent = text_update(&huart2,TWILIO_PHONE_NUMBER);
+				  if(SMS_sent == 1){UART_send("Updated Server");}
+				  else {UART_send("Fail to Update Server");}
+			  }
+			  update_server = 3;
+			  emergency = 0;
+		  }
 	  }
   }
-
-  self_ID = get_ID(hspi2,GPIOB);
-  //send self_ID to UART
-  uint8_t temp[10];
-  sprintf(temp,"%d",self_ID);
-  HAL_UART_Transmit(&(huart1),"Self_ID: ",9,30);
-  HAL_UART_Transmit(&(huart1),temp,strlen(temp),30);
-  HAL_UART_Transmit(&(huart1),"\x0D\x0A",2,30);
-
-  //Init: Init timeout_table
-  Init_timeout();
-  Fill_timeout(hspi2,GPIOB);
-  print_timeout();
-
-  req_ACK_UUID = 0;
-  resp_ACK_UUID = 0;
-//  while(1)
-//  {
-//	  HAL_NVIC_ClearPendingIRQ(EXTI4_15_IRQn);
-//	  HAL_NVIC_EnableIRQ(EXTI4_15_IRQn);
-//	  interrupt = OTHERS;
-//	  setModeRx(hspi2,GPIOB);
-//
-//	  do{asm("wfi");}while(interrupt == OTHERS);
-//	  HAL_Delay(1500);
-//	  if(interrupt == LORA_PACKET){
-//		interrupt = OTHERS;
-//		spiReadbuff(hspi2,GPIOB,data);
-//		if(data[TYPE] == RESP_ID || data[TYPE] == REQ_ID) {
-//			resp_ID(hspi2, GPIOB,(uint8_t *)data);
-//		}
-//		if(data[TYPE] == REQ_ACK){
-//			resp_ACK(hspi2,GPIOB,(uint8_t *)data);
-//		}
-//	  }
-//	  else if(interrupt == TIMEOUT){
-//		  interrupt = OTHERS;
-//		  //send update to everyone
-//		  //check for dead router
-//	  }
-//  }
-
-  send(hspi2,GPIOB,"SetRX");
-
-  HAL_Delay(100);
-  spiWrite(hspi2,GPIOB,0x12,0xff);
-  spiWrite(hspi2,GPIOB,0x12,0xff);
-  setModeRx(hspi2,GPIOB);
-
-
-  while(spiRead(hspi2,GPIOB,0x12)==0);
-  HAL_GPIO_TogglePin(GPIOB,GPIO_PIN_4);
-  HAL_GPIO_TogglePin(LED1_GPIO_Port,LED1_Pin);
-
-  while(1);
-
-
-  send(hspi2,GPIOB,"This is from the second micro");
-  rx_buff = spiRead(hspi2,GPIOB,0x12); //0x12 is IrqFlag
-
-  HAL_Delay(100);
-
-  rx_buff2 = spiRead(hspi2,GPIOB,0x12);
-  spiWrite(hspi2,GPIOB,0x11,0x8);
-  HAL_Delay(100);
-
-  rx_buff = spiRead(hspi2,GPIOB,0x12);
-
-
-  uint8_t bytelength, rx_buff2_new;
-  uint8_t h1,h2,h3,h4;
-  uint8_t SPIptr, rxcurrentaddr, txbaseaddr, rxbaseaddr;
-
-  //Extra code used for receiving then transmitting back
-  /*while(1)
-  {
-	  setModeRx(hspi2,GPIOB);
-	  HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
-	  while(spiRead(hspi2,GPIOB,0x012)==0); //TODO: check for rx done instead of non-zero
-	  HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
-	  HAL_Delay(100);
-	  rx_buff2 = spiRead(hspi2,GPIOB,0x12);
-	  bytelength = spiRead(hspi2,GPIOB,0x13);
-	  spiWrite(hspi2,GPIOB,0x12,0xff);
-	  spiWrite(hspi2,GPIOB,0x12,0xff);
-	  rx_buff2_new = spiRead(hspi2,GPIOB,0x12);
-	  HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_4);
-	  HAL_Delay(1000);
-	  send(hspi2,GPIOB,"This is from the second micro");
-  }
-  */
-
-  //prepare RX to receive
-  setModeRx(hspi2,GPIOB);
-  while(spiRead(hspi2,GPIOB,0x012)==0); //TODO: check for rx done instead of non-zero
-  //Receive complete
-
-  //Read the status register to clean up the code
-  HAL_Delay(100);
-  rx_buff2 = spiRead(hspi2,GPIOB,0x12);
-  bytelength = spiRead(hspi2,GPIOB,0x13);
-  spiWrite(hspi2,GPIOB,0x12,0xff);
-  spiWrite(hspi2,GPIOB,0x12,0xff);
-  rx_buff2_new = spiRead(hspi2,GPIOB,0x12);
-
-
-  //Get info on headers and bytelength
-  bytelength = spiRead(hspi2,GPIOB,0x13);
-  h1 = spiRead(hspi2,GPIOB,0x14);
-  h2 = spiRead(hspi2,GPIOB,0x15);
-  h3 = spiRead(hspi2,GPIOB,0x16);
-  h4 = spiRead(hspi2,GPIOB,0x17);
-
-  //Get info on pointers
-  SPIptr = spiRead(hspi2,GPIOB,0x0D);
-  txbaseaddr = spiRead(hspi2,GPIOB,0x0E);
-  rxbaseaddr = spiRead(hspi2,GPIOB,0x0F);
-  rxcurrentaddr = spiRead(hspi2,GPIOB,0x10);
-  spiWrite(hspi2,GPIOB,0x0D,rxcurrentaddr);
-
-  //create a buffer and read the data to it
-  uint8_t buffer[256];
-  spiReadbuff(hspi2,GPIOB,buffer);
-
-  if(strcmp(buffer,"This is from the second micro") == 0)
-  {
-	  HAL_GPIO_WritePin(GPIOB,GPIO_PIN_4,GPIO_PIN_SET);
-	  HAL_GPIO_WritePin(LED1_GPIO_Port,LED1_Pin,GPIO_PIN_SET);
-  }
-  else
-  {
-	  HAL_GPIO_WritePin(GPIOA,GPIO_PIN_5,GPIO_PIN_SET);
-	  HAL_GPIO_WritePin(LED2_GPIO_Port,LED2_Pin,GPIO_PIN_SET);
-  }
-
-  if(self_ID || rx_buff == rx_buff2 && bytelength == (h1 || h2 || h3 || h4 || SPIptr || rxcurrentaddr || txbaseaddr || rxbaseaddr || rx_buff2_new) && buffer == "")
-  {
-	  HAL_GPIO_WritePin(GPIOA,GPIO_PIN_5,GPIO_PIN_SET);
-  }
-  //send(hspi2, (uint8_t *) "abcdefghedfbjasdjasolkjoqsafichlosailkdje");
-//  uint8_t tx_buff[1] = {0x01};
-//  uint8_t rx_buff;
-//  uint8_t rx_buff2[1] = {0x00};
-//
-//  //read reg 1
-//  rx_buff = spiRead(hspi2,GPIOB,tx_buff[0]);
-//
-//  //write reg 1
-//  spiWrite(hspi2,GPIOB,0x1,0x80);
-//
-//
-//  //read reg 1
-//  rx_buff = spiRead(hspi2,GPIOB,tx_buff[0]);
-
-  /*rx_buff[0] = 0x00;
-  HAL_SPI_TransmitReceive(&hspi2,tx_buff,rx_buff,sizeof(tx_buff),30);
-  if(rx_buff[0] == 0x01) {
-	  HAL_GPIO_WritePin(GPIOA,GPIO_PIN_5,GPIO_PIN_SET);
-  }
-  else {
-	  HAL_GPIO_WritePin(GPIOB,GPIO_PIN_4,GPIO_PIN_RESET);
-	  while(1) {}
-  }*/
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -743,6 +655,9 @@ static void MX_DMA_Init(void)
   __HAL_RCC_DMA1_CLK_ENABLE();
 
   /* DMA interrupt init */
+  /* DMA1_Channel2_3_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Channel2_3_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Channel2_3_IRQn);
   /* DMA1_Channel4_5_6_7_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA1_Channel4_5_6_7_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA1_Channel4_5_6_7_IRQn);

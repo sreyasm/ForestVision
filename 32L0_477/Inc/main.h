@@ -58,9 +58,9 @@ void set_tim2(int);
 void stop_tim2();
 void UART_send(uint8_t *);
 
-
+#define IS_PCB 1
 #define MAX_NODE 10
-#define SELF_ID 3
+#define SELF_ID 2
 #define UPDATE_PERIOD 10 //sec
 #define TIMEOUT_PERIOD 30 //sec
 struct timeout_arr{
@@ -75,8 +75,9 @@ struct routing_table{
 	uint8_t active;
 	uint8_t next_hop;
 	uint8_t num_hop;
-	uint8_t signal;
-	uint8_t battery;
+	uint8_t signal; //From 0 - 99
+	uint8_t battery; //From 0 - 100
+	uint8_t fire; // 0 or 1
 	uint8_t route[MAX_NODE];
 };
 struct routing_table rt[MAX_NODE];
@@ -84,7 +85,9 @@ struct routing_table recv_rt[MAX_NODE];
 uint8_t sender_ID;
 
 uint8_t self_ID;
+uint8_t self_signal;
 uint8_t self_battery;
+uint8_t self_fire;
 
 uint8_t req_ACK_UUID;
 uint8_t resp_ACK_UUID;

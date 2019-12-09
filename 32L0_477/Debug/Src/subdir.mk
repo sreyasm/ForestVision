@@ -4,6 +4,7 @@
 
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
+../Src/G350.c \
 ../Src/Mesh.c \
 ../Src/RH_RF95.c \
 ../Src/fuel_gauge.c \
@@ -11,9 +12,11 @@ C_SRCS += \
 ../Src/stm32l0xx_hal_msp.c \
 ../Src/stm32l0xx_it.c \
 ../Src/syscalls.c \
-../Src/system_stm32l0xx.c 
+../Src/system_stm32l0xx.c \
+../Src/text_update.c 
 
 OBJS += \
+./Src/G350.o \
 ./Src/Mesh.o \
 ./Src/RH_RF95.o \
 ./Src/fuel_gauge.o \
@@ -21,9 +24,11 @@ OBJS += \
 ./Src/stm32l0xx_hal_msp.o \
 ./Src/stm32l0xx_it.o \
 ./Src/syscalls.o \
-./Src/system_stm32l0xx.o 
+./Src/system_stm32l0xx.o \
+./Src/text_update.o 
 
 C_DEPS += \
+./Src/G350.d \
 ./Src/Mesh.d \
 ./Src/RH_RF95.d \
 ./Src/fuel_gauge.d \
@@ -31,7 +36,8 @@ C_DEPS += \
 ./Src/stm32l0xx_hal_msp.d \
 ./Src/stm32l0xx_it.d \
 ./Src/syscalls.d \
-./Src/system_stm32l0xx.d 
+./Src/system_stm32l0xx.d \
+./Src/text_update.d 
 
 
 # Each subdirectory must supply rules for building sources it contributes
