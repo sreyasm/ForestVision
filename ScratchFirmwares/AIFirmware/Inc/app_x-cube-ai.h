@@ -57,7 +57,7 @@
 #include "network.h"
 #include "network_data.h"
 
-#define MIN_HEAP_SIZE 0x200
+#define MIN_HEAP_SIZE 0x2000
 #define MIN_STACK_SIZE 0x400
 
 #define AI_NETWORK_DATA_ACTIVATIONS_START_ADDR 0xFFFFFFFF

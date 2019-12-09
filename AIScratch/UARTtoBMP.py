@@ -6,11 +6,11 @@ ser = serial.Serial(
     baudrate=115200,
 )
 
-data = ser.read(153666)
-print('Recieved Data!')
-file = open('RGB565.bmp', 'wb')
-file.write(data)
-file.close()
+#data = ser.read(153666)
+#print('Recieved Data!')
+#file = open('RGB565.bmp', 'wb')
+#file.write(data)
+#file.close()
 
 data = ser.read(30054)
 print('Recieved Data!')

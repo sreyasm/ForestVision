@@ -69,6 +69,10 @@ static void MX_CRC_Init(void);
 /* USER CODE BEGIN PFP */
 static void Camera_Config(void);
 void RGB24_to_Float_Asym(void *pSrc, void *pDst, uint32_t pixels);
+void ImageResize(uint8_t *srcImage, uint32_t srcW, uint32_t srcH,
+                 uint32_t pixelSize, uint32_t roiX, uint32_t roiY,
+                 uint32_t roiW, uint32_t roiH,  uint8_t *dstImage,
+                 uint32_t dstW, uint32_t dstH);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -80,10 +84,10 @@ AI_ALIGNED(4)
 static ai_u8 initCapAndActivations[AI_NETWORK_DATA_ACTIVATIONS_SIZE];
 
 AI_ALIGNED(4)
-static ai_i8 ai_in_data[AI_NETWORK_IN_1_SIZE_BYTES];
+static ai_u8 ai_in_data[AI_NETWORK_IN_1_SIZE_BYTES];
 
 AI_ALIGNED(4)
-static ai_i8 ai_out_data[AI_NETWORK_OUT_1_SIZE_BYTES];
+static ai_u8 ai_out_data[AI_NETWORK_OUT_1_SIZE_BYTES];
 
 uint8_t my_bmp_header[] = {
 		  0x42,0x4D,0x36,0x58,0x02,0x00,0x00,0x00,0x00,0x00, // ID=BM, Filsize=(240x320x2+66)
@@ -102,6 +106,15 @@ uint8_t BMP_HEADER_100x100[]={
   0x18,0x00,0x00,0x00,0x00,0x00,0x30,0x75,0x00,0x00, // 24bpp, unkomprimiert, Data=(100x100x3)
   0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,           // nc
   0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};          // nc
+
+uint8_t BMP_HEADER_320x240[]={
+  0x42,0x4D,0x36,0x84,0x03,0x00,0x00,0x00,0x00,0x00, // ID=BM, Filsize=(320x240x3+54)
+  0x36,0x00,0x00,0x00,0x28,0x00,0x00,0x00,           // Offset=54d, Headerlen=40d
+  0x40,0x01,0x00,0x00,0xF0,0x00,0x00,0x00,0x01,0x00, // W=320d, H=240d (landscape)
+  0x18,0x00,0x00,0x00,0x00,0x00,0x00,0x84,0x03,0x00, // 24bpp, unkomprimiert, Data=(320x240x3)
+  0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,           // nc
+  0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};          // nc
+
 /* USER CODE END 0 */
 
 /**
@@ -146,6 +159,8 @@ int main(void)
   MX_CRC_Init();
   MX_X_CUBE_AI_Init();
   /* USER CODE BEGIN 2 */
+
+  // init
   Camera_Config();
   HAL_Delay(2000);
   aiInit(initCapAndActivations);
@@ -160,41 +175,39 @@ int main(void)
     HAL_Delay(200);
   }
 
-
-  HAL_UART_Transmit(&huart4, &my_bmp_header,sizeof(my_bmp_header),2000);
-  for(int i = 0;i < CAM_BUF*2;i++) {
-	  HAL_UART_Transmit(&huart4,&initCapAndActivations[i],1,2000);
-  }
-  HAL_Delay(300);
-
-  //ImageResize(initCapAndActivations, 320, 240, 2, 0, 0, 0, 0, ai_in_data, 100, 100);
-
-
-  // convert to RGB888
-  uint8_t RGB888[CROP_BUF] = {0};
-  HAL_UART_Transmit(&huart4, &BMP_HEADER_100x100,sizeof(BMP_HEADER_100x100),2000);
+  // convert to RGB888 and flip R and B
+  uint8_t RGB888[CAM_BUF*3] = {0};
   int pix = 0;
-  //for(int i = 0;i < (100*100*2);i+=2) {
-  for(int y = 0;y < (320*100);y += 320) {
-    for(int x = 0;x < (100);x++) {
-      int i = (x + y) * 2;
-      RGB888[pix] = ((initCapAndActivations[i+1]&0xF8)>>8);  // 5bit red
-      RGB888[pix+1] = (((initCapAndActivations[i+1]&0xE0)) |
-      		((initCapAndActivations[i]&0x7)<<2));  // 6bit green
+
+  for(int i = 0;i < (CAM_BUF*2);i+=2) {
+      RGB888[pix] = ((initCapAndActivations[i+1]&0xF8));  // 5bit red
+      RGB888[pix+1] = (((initCapAndActivations[i]&0xE0)>>3) |
+      		((initCapAndActivations[i+1]&0x7)<<5));  // 6bit green
       RGB888[pix+2] = ((initCapAndActivations[i]&0x1F)<<3);  // 5bit blue
-      HAL_UART_Transmit(&huart4,&RGB888[pix],1,2000);
-      HAL_UART_Transmit(&huart4,&RGB888[pix+1],1,2000);
-      HAL_UART_Transmit(&huart4,&RGB888[pix+2],1,2000);
-      //pix += 3;
-    }
+      pix += 3;
   }
 
+  /*HAL_UART_Transmit(&huart4, BMP_HEADER_320x240,sizeof(BMP_HEADER_320x240),2000);
+  for(int i = 0;i < CAM_BUF*3;i++) {
+      HAL_UART_Transmit(&huart4,&RGB888[i],1,2000);
+  }*/
 
-      // scale pixels [0,1]
-      RGB24_to_Float_Asym((void*)RGB888,(void*)ai_in_data,(uint32_t)CROP_BUF/3);
+  ImageResize(RGB888, 320, 240, 3, 0, 0, 0, 0, ai_in_data, 100, 100);
 
-      // run inference
-      //aiRun((void*)ai_in_data,(void*)ai_out_data);
+  /*HAL_UART_Transmit(&huart4, BMP_HEADER_100x100,sizeof(BMP_HEADER_100x100),2000);
+  for(int i = 0;i < CROP_BUF;i++) {
+      HAL_UART_Transmit(&huart4,&ai_in_data[i],1,2000);
+  }*/
+
+
+  // scale pixels [0,1]
+  RGB24_to_Float_Asym((void*)ai_in_data,(void*)ai_in_data,(uint32_t)CROP_BUF/3);
+
+  // run inference
+  aiRun((void*)ai_in_data,(void*)ai_out_data);
+  char result[20] = "";
+  int len = sprintf(result,"result: %d\r\n",*ai_out_data);
+  HAL_UART_Transmit(&huart4,result,len,2000);
 
   /* USER CODE END 2 */
 

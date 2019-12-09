@@ -1,7 +1,7 @@
 Neural Network Tools for STM32 v1.1.0 (AI tools v4.1.0)
-Created date    : 2019-12-07 04:46:43
+Created date    : 2019-12-09 14:50:56
 
-Exec/report summary (generate dur=4.521s err=0)
+Exec/report summary (generate dur=4.717s err=0)
 ------------------------------------------------------------------------------------------------------------------------
 model file      : C:\Users\smirthip\cats_and_dogs_filtered\model.h5
 type            : keras (keras_dump)
@@ -9,7 +9,7 @@ c_name          : network
 compression     : 8
 quantize        : None
 L2r error       : NOT EVALUATED
-workspace dir   : C:\Users\smirthip\AppData\Local\Temp\mxAI_workspace7913211020675002219720756580961022
+workspace dir   : C:\Users\smirthip\AppData\Local\Temp\mxAI_workspace1000371879365200201405211423550730
 output dir      : C:\Users\smirthip\.stm32cubemx\stm32ai_output
 
 model_name      : model
