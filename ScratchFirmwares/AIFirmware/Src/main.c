@@ -81,13 +81,13 @@ void ImageResize(uint8_t *srcImage, uint32_t srcW, uint32_t srcH,
 // AI and initial capture Buffer -- used for capturing original image
 // and then as activations buffer for ML API
 AI_ALIGNED(4)
-static ai_u8 initCapAndActivations[AI_NETWORK_DATA_ACTIVATIONS_SIZE];
+ai_u8 initCapAndActivations[AI_NETWORK_DATA_ACTIVATIONS_SIZE];
 
 AI_ALIGNED(4)
-static ai_u8 ai_in_data[AI_NETWORK_IN_1_SIZE_BYTES];
+ai_u8 ai_in_data[AI_NETWORK_IN_1_SIZE_BYTES];
 
 AI_ALIGNED(4)
-static ai_u8 ai_out_data[AI_NETWORK_OUT_1_SIZE_BYTES];
+ai_u8 ai_out_data[AI_NETWORK_OUT_1_SIZE_BYTES];
 
 uint8_t my_bmp_header[] = {
 		  0x42,0x4D,0x36,0x58,0x02,0x00,0x00,0x00,0x00,0x00, // ID=BM, Filsize=(240x320x2+66)
@@ -162,62 +162,61 @@ int main(void)
 
   // init
   Camera_Config();
-  HAL_Delay(2000);
   aiInit(initCapAndActivations);
-
-  // image capture
-  HAL_DCMI_Start_DMA(&hdcmi,DCMI_MODE_SNAPSHOT,(uint32_t) &initCapAndActivations,
-	  		(uint32_t) CAM_BUF);
-  while(HAL_DCMI_GetState(&hdcmi) != HAL_DCMI_STATE_READY) {
-    HAL_GPIO_WritePin(LED1_GPIO_Port,LED1_Pin,GPIO_PIN_SET);
-    HAL_Delay(200);
-    HAL_GPIO_WritePin(LED1_GPIO_Port,LED1_Pin,GPIO_PIN_RESET);
-    HAL_Delay(200);
-  }
-
-  // convert to RGB888 and flip R and B
   uint8_t RGB888[CAM_BUF*3] = {0};
-  int pix = 0;
-
-  for(int i = 0;i < (CAM_BUF*2);i+=2) {
-      RGB888[pix] = ((initCapAndActivations[i+1]&0xF8));  // 5bit red
-      RGB888[pix+1] = (((initCapAndActivations[i]&0xE0)>>3) |
-      		((initCapAndActivations[i+1]&0x7)<<5));  // 6bit green
-      RGB888[pix+2] = ((initCapAndActivations[i]&0x1F)<<3);  // 5bit blue
-      pix += 3;
-  }
-
-  /*HAL_UART_Transmit(&huart4, BMP_HEADER_320x240,sizeof(BMP_HEADER_320x240),2000);
-  for(int i = 0;i < CAM_BUF*3;i++) {
-      HAL_UART_Transmit(&huart4,&RGB888[i],1,2000);
-  }*/
-
-  ImageResize(RGB888, 320, 240, 3, 0, 0, 0, 0, ai_in_data, 100, 100);
-
-  /*HAL_UART_Transmit(&huart4, BMP_HEADER_100x100,sizeof(BMP_HEADER_100x100),2000);
-  for(int i = 0;i < CROP_BUF;i++) {
-      HAL_UART_Transmit(&huart4,&ai_in_data[i],1,2000);
-  }*/
-
-
-  // scale pixels [0,1]
-  RGB24_to_Float_Asym((void*)ai_in_data,(void*)ai_in_data,(uint32_t)CROP_BUF/3);
-
-  // run inference
-  aiRun((void*)ai_in_data,(void*)ai_out_data);
-  char result[20] = "";
-  int len = sprintf(result,"result: %d\r\n",*ai_out_data);
-  HAL_UART_Transmit(&huart4,result,len,2000);
-
+  HAL_Delay(2000);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1) {
-    HAL_GPIO_WritePin(LED2_GPIO_Port,LED2_Pin,GPIO_PIN_SET);
-    HAL_Delay(500);
-    HAL_GPIO_WritePin(LED2_GPIO_Port,LED2_Pin,GPIO_PIN_RESET);
-    HAL_Delay(500);
+	  // image capture
+	  HAL_DCMI_Start_DMA(&hdcmi,DCMI_MODE_SNAPSHOT,(uint32_t) &initCapAndActivations,
+		  		(uint32_t) CAM_BUF);
+	  HAL_Delay(800);
+	  if(HAL_DCMI_GetState(&hdcmi) != HAL_DCMI_STATE_READY) {
+		  HAL_DCMI_Stop(&hdcmi);
+		  uint8_t error = 'E';
+		  HAL_UART_Transmit(&huart4,&error,1,200);
+	  }
+	  else {
+		  // convert to RGB888 and flip R and B
+		  int pix = 0;
+
+		  for(int i = 0;i < (CAM_BUF*2);i+=2) {
+			  RGB888[pix] = ((initCapAndActivations[i+1]&0xF8));  // 5bit red
+			  RGB888[pix+1] = (((initCapAndActivations[i]&0xE0)>>3) |
+					  ((initCapAndActivations[i+1]&0x7)<<5));  // 6bit green
+			  RGB888[pix+2] = ((initCapAndActivations[i]&0x1F)<<3);  // 5bit blue
+			  pix += 3;
+		  }
+
+		  /*HAL_UART_Transmit(&huart4, BMP_HEADER_320x240,sizeof(BMP_HEADER_320x240),2000);
+	  	  for(int i = 0;i < CAM_BUF*3;i++) {
+	      	  HAL_UART_Transmit(&huart4,&RGB888[i],1,2000);
+	  	  }*/
+
+		  ImageResize(RGB888, 320, 240, 3, 0, 0, 0, 0, ai_in_data, 100, 100);
+
+		  /*HAL_UART_Transmit(&huart4, BMP_HEADER_100x100,sizeof(BMP_HEADER_100x100),2000);
+	  	  for(int i = 0;i < CROP_BUF;i++) {
+	      	  HAL_UART_Transmit(&huart4,&ai_in_data[i],1,2000);
+	  	  }*/
+
+
+		  // scale pixels [0,1]
+		  RGB24_to_Float_Asym((void*)ai_in_data,(void*)ai_in_data,(uint32_t)CROP_BUF/3);
+
+		  // run inference
+		  aiRun((void*)ai_in_data,(void*)ai_out_data);
+		  int* percent = (int*) ai_out_data;
+	  	  uint8_t result = (*percent) > 0 ? 'F' : 'N';
+	  	  HAL_UART_Transmit(&huart4,&result,1,2000);
+	  	  HAL_GPIO_WritePin(LED2_GPIO_Port,LED2_Pin,GPIO_PIN_SET);
+	  }
+	  HAL_Delay(10000);
+  	  HAL_GPIO_WritePin(LED2_GPIO_Port,LED2_Pin,GPIO_PIN_RESET);
+  	  HAL_NVIC_SystemReset();
     /* USER CODE END WHILE */
 
   MX_X_CUBE_AI_Process();
